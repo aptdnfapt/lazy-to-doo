@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <paths>
+        <external-cache-path name="audio_cache" path="." />
+        <cache-path name="internal_audio_cache" path="." />
+    </paths>
+</resources>

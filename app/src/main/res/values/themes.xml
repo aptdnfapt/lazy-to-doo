@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.VoiceTodo" parent="Theme.AppCompat.DayNight">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">#1976D2</item>
+    </style>
+
+    <style name="Theme.VoiceTodo" parent="Base.Theme.VoiceTodo" />
+</resources>

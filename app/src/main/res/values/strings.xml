@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">Voice Todo</string>
+    
+    <!-- Chat Screen -->
+    <string name="chat_title">Voice Assistant</string>
+    <string name="chat_placeholder">Tap the microphone to start talking...</string>
+    <string name="voice_input_hint">Say something like:\n- Add todo buy milk\n- Mark todo 1 complete\n- Show my todos</string>
+    
+    <!-- Todo Screen -->
+    <string name="todos_title">My Todos</string>
+    <string name="section_todo">To Do</string>
+    <string name="section_in_progress">In Progress</string>
+    <string name="section_done">Done</string>
+    <string name="section_do_later">Do Later</string>
+    <string name="empty_todos">No todos yet. Start by adding one!</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="llm_provider">AI Provider</string>
+    <string name="api_key">API Key</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Permissions -->
+    <string name="permission_audio_title">Microphone Permission Required</string>
+    <string name="permission_audio_message">Voice Todo needs access to your microphone to transcribe your voice commands.</string>
+    <string name="permission_notification_title">Notification Permission Required</string>
+    <string name="permission_notification_message">Voice Todo needs notification permission to send you reminders.</string>
+    <string name="grant">Grant</string>
+    <string name="deny">Deny</string>
+    
+    <!-- Voice Recording -->
+    <string name="recording">Recording...</string>
+    <string name="transcribing">Transcribing...</string>
+    <string name="processing">Processing...</string>
+    
+    <!-- Errors -->
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_api_key">Invalid API key. Please check your settings.</string>
+    <string name="error_audio_recording">Failed to record audio. Please check microphone permissions.</string>
+    
+    <!-- Content descriptions for accessibility -->
+    <string name="cd_microphone">Microphone button</string>
+    <string name="cd_recording_indicator">Recording indicator</string>
+    <string name="cd_todo_item">Todo item</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_todo_list">Todo list</string>
+</resources>
