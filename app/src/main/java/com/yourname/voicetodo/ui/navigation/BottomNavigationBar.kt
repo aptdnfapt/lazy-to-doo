@@ -20,7 +20,7 @@ fun BottomNavigationBar(
 ) {
     val items = listOf(
         BottomNavItem(
-            screen = Screen.Chat,
+            screen = Screen.ChatList,
             title = "Chat",
             icon = Icons.Default.Info
         ),
@@ -41,12 +41,27 @@ fun BottomNavigationBar(
 
     NavigationBar {
         items.forEach { item ->
+            val isSelected = when (item.screen) {
+                is Screen.ChatList -> currentRoute == Screen.ChatList.route || currentRoute?.startsWith("chat/") == true
+                else -> currentRoute == item.screen.route
+            }
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 label = { Text(item.title) },
-                selected = currentRoute == item.screen.route,
+                selected = isSelected,
                 onClick = {
-                    navController.navigate(item.screen.route) {
+                    val targetRoute = when (item.screen) {
+                        is Screen.ChatList -> {
+                            // If we're in a chat session, pop back to chat list
+                            if (currentRoute?.startsWith("chat/") == true) {
+                                navController.popBackStack(Screen.ChatList.route, false)
+                                return@NavigationBarItem
+                            }
+                            Screen.ChatList.route
+                        }
+                        else -> item.screen.route
+                    }
+                    navController.navigate(targetRoute) {
                         // Pop up to the start destination of the graph to
                         // avoid building up a large stack of destinations
                         // on the back stack as users select items

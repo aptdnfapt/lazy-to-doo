@@ -36,12 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.yourname.voicetodo.ui.screens.chat.components.MessageBubble
 import com.yourname.voicetodo.ui.screens.chat.components.MicButton
 import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
+    sessionId: String,
+    navController: NavHostController,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
@@ -50,10 +53,16 @@ fun ChatScreen(
     val isProcessing by viewModel.isProcessing.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val amplitude by viewModel.amplitude.collectAsState()
-    
+    val currentModel by viewModel.currentModel.collectAsState()
+
     var textInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    // Initialize session
+    LaunchedEffect(sessionId) {
+        viewModel.initializeSession(sessionId)
+    }
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
@@ -78,12 +87,20 @@ fun ChatScreen(
             .padding(16.dp)
     ) {
         // Header
-        Text(
-            text = "Voice Todo Assistant",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+        Column(
             modifier = Modifier.padding(bottom = 16.dp)
-        )
+        ) {
+            Text(
+                text = "Voice Todo Assistant",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Using: $currentModel",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         // Messages list
         LazyColumn(

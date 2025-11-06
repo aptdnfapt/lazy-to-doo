@@ -25,8 +25,11 @@ class ChatViewModel @Inject constructor(
     private val agent: TodoAgent,
     private val transcriber: WhisperTranscriber,
     private val recorder: RecorderManager,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val chatRepository: com.yourname.voicetodo.data.repository.ChatRepository
 ) : ViewModel() {
+
+    private var currentSessionId: String = ""
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
@@ -55,6 +58,15 @@ class ChatViewModel @Inject constructor(
         Triple(baseUrl, apiKey, modelName)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, Triple("", "", ""))
 
+    val currentModel = combine(
+        userPreferences.getLlmBaseUrl(),
+        userPreferences.getLlmModelName()
+    ) { baseUrl, modelName ->
+        val base = if (baseUrl.isNotEmpty()) baseUrl else "OpenAI"
+        val model = if (modelName.isNotEmpty()) modelName else "gpt-4o"
+        "$model (${base.replace("https://", "").replace("/v1", "")})"
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, "gpt-4o (OpenAI)")
+
     private var currentAudioFile: File? = null
 
     init {
@@ -62,12 +74,40 @@ class ChatViewModel @Inject constructor(
         recorder.setOnUpdateMicrophoneAmplitude { amplitude ->
             _amplitude.value = amplitude
         }
-        
-        // Add welcome message
-        addMessage(
-            content = "Hi! I'm your voice-controlled todo assistant. Please configure your LLM provider in Settings first, then tap the microphone button and speak to add, edit, or manage your todos.",
-            isFromUser = false
-        )
+    }
+
+    fun initializeSession(sessionId: String) {
+        if (currentSessionId != sessionId) {
+            currentSessionId = sessionId
+            loadMessagesForSession(sessionId)
+        }
+    }
+
+    private fun loadMessagesForSession(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                // First check if session exists, create if not
+                val session = chatRepository.getChatSessionById(sessionId)
+                if (session == null) {
+                    // Create new session with the provided ID if it doesn't exist
+                    chatRepository.createChatSessionWithId(sessionId, "New Chat")
+                }
+
+                // Load messages for the session
+                chatRepository.getMessagesForSession(sessionId).collect { messages ->
+                    _messages.value = messages
+                    if (messages.isEmpty()) {
+                        // Add welcome message for new sessions
+                        addMessage(
+                            content = "Hi! I'm your voice-controlled todo assistant. Please configure your LLM provider in Settings first, then tap the microphone button and speak to add, edit, or manage your todos.",
+                            isFromUser = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load chat session: ${e.message}"
+            }
+        }
     }
 
     fun startRecording() {
@@ -145,7 +185,7 @@ class ChatViewModel @Inject constructor(
                 _isProcessing.value = false
                 return
             }
-            
+
             if (baseUrl.isEmpty()) {
                 val errorMsg = "Please set your LLM Base URL in Settings"
                 addMessage(errorMsg, isFromUser = false)
@@ -153,7 +193,7 @@ class ChatViewModel @Inject constructor(
                 _isProcessing.value = false
                 return
             }
-            
+
             if (modelName.isEmpty()) {
                 val errorMsg = "Please set your LLM Model Name in Settings"
                 addMessage(errorMsg, isFromUser = false)
@@ -163,7 +203,9 @@ class ChatViewModel @Inject constructor(
             }
             
             // Use the agent's createAgent which reads from preferences
-            val agentResponse = agent.runAgent(userMessage)
+            // Pass current chat history for context (all messages except the current one being processed)
+            val chatHistory = _messages.value
+            val agentResponse = agent.runAgent(userMessage, chatHistory)
             addMessage(agentResponse, isFromUser = false)
         } catch (e: Exception) {
             val errorMsg = "Sorry, I encountered an error: ${e.message}"
@@ -176,7 +218,7 @@ class ChatViewModel @Inject constructor(
 
     fun sendTextMessage(text: String) {
         if (text.isBlank()) return
-        
+
         viewModelScope.launch {
             addMessage(text, isFromUser = true)
             processWithAgent(text)
@@ -187,15 +229,18 @@ class ChatViewModel @Inject constructor(
         _errorMessage.value = null
     }
 
-    private fun addMessage(content: String, isFromUser: Boolean) {
-        val message = Message(
-            id = UUID.randomUUID().toString(),
-            content = content,
-            isFromUser = isFromUser
-        )
-        val currentMessages = _messages.value.toMutableList()
-        currentMessages.add(message)
-        _messages.value = currentMessages
+    private suspend fun addMessage(content: String, isFromUser: Boolean) {
+        if (currentSessionId.isEmpty()) {
+            _errorMessage.value = "No active chat session"
+            return
+        }
+
+        try {
+            val message = chatRepository.addMessage(currentSessionId, content, isFromUser)
+            // The messages will be updated via the Flow from the repository
+        } catch (e: Exception) {
+            _errorMessage.value = "Failed to save message: ${e.message}"
+        }
     }
 
     override fun onCleared() {

@@ -36,9 +36,9 @@ class TodoTools @Inject constructor(
                 description = description ?: title,
                 section = todoSection
             )
-            "✅ Added todo: ${todo.description} in ${todoSection.name.replace("_", " ").lowercase()}"
+            "🔧 Tool Call: addTodo\n✅ Added todo: ${todo.description} in ${todoSection.name.replace("_", " ").lowercase()}"
         } catch (e: Exception) {
-            "❌ Failed to add todo: ${e.message}"
+            "🔧 Tool Call: addTodo\n❌ Failed to add todo: ${e.message}"
         }
     }
 
@@ -51,12 +51,12 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.deleteTodoById(todoId)
-                "✅ Removed todo: ${todo.description}"
+                "🔧 Tool Call: removeTodo\n✅ Removed todo: ${todo.description}"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: removeTodo\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to remove todo: ${e.message}"
+            "🔧 Tool Call: removeTodo\n❌ Failed to remove todo: ${e.message}"
         }
     }
 
@@ -71,12 +71,12 @@ class TodoTools @Inject constructor(
             if (todo != null) {
                 val updatedTodo = todo.copy(description = description)
                 repository.updateTodo(updatedTodo)
-                "✅ Updated todo description to: $description"
+                "🔧 Tool Call: editDescription\n✅ Updated todo description to: $description"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: editDescription\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to update todo: ${e.message}"
+            "🔧 Tool Call: editDescription\n❌ Failed to update todo: ${e.message}"
         }
     }
 
@@ -89,12 +89,12 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.DONE)
-                "✅ Marked todo as complete: ${todo.description}"
+                "🔧 Tool Call: markComplete\n✅ Marked todo as complete: ${todo.description}"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: markComplete\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to mark todo as complete: ${e.message}"
+            "🔧 Tool Call: markComplete\n❌ Failed to mark todo as complete: ${e.message}"
         }
     }
 
@@ -107,12 +107,12 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.IN_PROGRESS)
-                "🔄 Marked todo as in progress: ${todo.description}"
+                "🔧 Tool Call: markInProgress\n🔄 Marked todo as in progress: ${todo.description}"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: markInProgress\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to mark todo as in progress: ${e.message}"
+            "🔧 Tool Call: markInProgress\n❌ Failed to mark todo as in progress: ${e.message}"
         }
     }
 
@@ -125,12 +125,12 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.DO_LATER)
-                "⏰ Marked todo to do later: ${todo.description}"
+                "🔧 Tool Call: markDoLater\n⏰ Marked todo to do later: ${todo.description}"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: markDoLater\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to mark todo to do later: ${e.message}"
+            "🔧 Tool Call: markDoLater\n❌ Failed to mark todo to do later: ${e.message}"
         }
     }
 
@@ -143,9 +143,9 @@ class TodoTools @Inject constructor(
             // Note: TodoSection is an enum, so we can't create new sections dynamically
             // Available sections are: TODO, IN_PROGRESS, DONE, DO_LATER
             val availableSections = TodoSection.values().joinToString(", ") { it.name.lowercase().replace("_", " ") }
-            "ℹ️ Available sections are: $availableSections. Please use one of these sections when adding or moving todos."
+            "🔧 Tool Call: createSection\nℹ️ Available sections are: $availableSections. Please use one of these sections when adding or moving todos."
         } catch (e: Exception) {
-            "❌ Failed: ${e.message}"
+            "🔧 Tool Call: createSection\n❌ Failed: ${e.message}"
         }
     }
 
@@ -160,12 +160,12 @@ class TodoTools @Inject constructor(
             if (todo != null) {
                 repository.updateTodoReminder(todoId, time)
                 val reminderDate = java.util.Date(time)
-                "⏰ Set reminder for todo '${todo.description}' at $reminderDate"
+                "🔧 Tool Call: setReminder\n⏰ Set reminder for todo '${todo.description}' at $reminderDate"
             } else {
-                "❌ Todo with ID $todoId not found"
+                "🔧 Tool Call: setReminder\n❌ Todo with ID $todoId not found"
             }
         } catch (e: Exception) {
-            "❌ Failed to set reminder: ${e.message}"
+            "🔧 Tool Call: setReminder\n❌ Failed to set reminder: ${e.message}"
         }
     }
 
@@ -177,9 +177,9 @@ class TodoTools @Inject constructor(
         return try {
             // Note: In a real implementation, this would use Android's TTS (Text-to-Speech)
             // For now, we'll just return the text as if it was read
-            "🔊 Reading: $text"
+            "🔧 Tool Call: readOutLoud\n🔊 Reading: $text"
         } catch (e: Exception) {
-            "❌ Failed to read text: ${e.message}"
+            "🔧 Tool Call: readOutLoud\n❌ Failed to read text: ${e.message}"
         }
     }
 
@@ -201,9 +201,9 @@ class TodoTools @Inject constructor(
             }
             
             if (todos.isEmpty()) {
-                return "📝 No todos found"
+                return "🔧 Tool Call: listTodos\n📝 No todos found"
             }
-            
+
             val todoList = todos.joinToString("\n") { todo ->
                 val status = when (todo.section) {
                     TodoSection.TODO -> "📝"
@@ -213,10 +213,10 @@ class TodoTools @Inject constructor(
                 }
                 "$status [${todo.id.take(8)}] ${todo.description}"
             }
-            
-            "📋 Todos:\n$todoList"
+
+            "🔧 Tool Call: listTodos\n📋 Todos:\n$todoList"
         } catch (e: Exception) {
-            "❌ Failed to list todos: ${e.message}"
+            "🔧 Tool Call: listTodos\n❌ Failed to list todos: ${e.message}"
         }
     }
 }

@@ -26,7 +26,7 @@ class TodoAgent @Inject constructor(
 
     private val systemPrompt = """
         You are a helpful voice-controlled todo assistant. You help users manage their todos through voice commands.
-        
+
         Your capabilities include:
         - Adding new todos with titles and descriptions
         - Editing existing todos
@@ -35,18 +35,20 @@ class TodoAgent @Inject constructor(
         - Setting reminders for todos
         - Listing todos by section
         - Reading text out loud when requested
-        
+
         When users speak commands, interpret them naturally and take appropriate actions. Always be helpful and confirm actions taken.
-        
+
         Available sections for todos are:
         - TODO (new tasks)
         - IN_PROGRESS (currently working on)
         - DONE (completed tasks)
         - DO_LATER (deferred tasks)
-        
+
         When adding todos, if no section is specified, use TODO by default.
         Always confirm what you've done in a friendly, conversational way.
-        
+
+        IMPORTANT: Before taking any action on existing todos (like marking complete, editing, or deleting), first use the listTodos tool to see what todos are available. This helps you understand which todo the user is referring to. Look at the todo IDs and descriptions to match user requests accurately.
+
         If you need clarification about a todo request, use the AskUser tool to ask for more information.
     """.trimIndent()
 
@@ -106,10 +108,22 @@ class TodoAgent @Inject constructor(
         )
     }
 
-    suspend fun runAgent(userMessage: String): String {
+    suspend fun runAgent(userMessage: String, chatHistory: List<com.yourname.voicetodo.domain.model.Message> = emptyList()): String {
         val agent = createAgent()
+
+        // Build conversation context from chat history
+        val conversationContext = if (chatHistory.isNotEmpty()) {
+            val historyText = chatHistory.joinToString("\n") { message ->
+                val role = if (message.isFromUser) "User" else "Assistant"
+                "$role: ${message.content}"
+            }
+            "$historyText\nUser: $userMessage"
+        } else {
+            userMessage
+        }
+
         return try {
-            agent.run(userMessage)
+            agent.run(conversationContext)
         } catch (e: Exception) {
             "Sorry, I encountered an error: ${e.message}"
         }

@@ -5,9 +5,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.yourname.voicetodo.ui.screens.chat.ChatListScreen
 import com.yourname.voicetodo.ui.screens.chat.ChatScreen
 import com.yourname.voicetodo.ui.screens.settings.SettingsScreen
 import com.yourname.voicetodo.ui.screens.todos.TodoListScreen
@@ -24,11 +26,15 @@ fun NavGraph(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Chat.route,
+            startDestination = Screen.ChatList.route,
             modifier = modifier.padding(paddingValues)
         ) {
-            composable(Screen.Chat.route) {
-                ChatScreen()
+            composable(Screen.ChatList.route) {
+                ChatListScreen(navController = navController)
+            }
+            composable(Screen.Chat.route) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                ChatScreen(sessionId = sessionId, navController = navController)
             }
             composable(Screen.Todos.route) {
                 TodoListScreen()

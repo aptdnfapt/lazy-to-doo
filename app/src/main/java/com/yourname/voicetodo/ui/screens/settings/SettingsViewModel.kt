@@ -48,7 +48,7 @@ class SettingsViewModel @Inject constructor(
     // Update functions
     fun updateLlmBaseUrl(url: String) {
         viewModelScope.launch {
-            preferences.setLlmBaseUrl(url)
+            preferences.setLlmBaseUrl(url.trim())
         }
     }
 
@@ -60,7 +60,7 @@ class SettingsViewModel @Inject constructor(
 
     fun updateLlmModelName(modelName: String) {
         viewModelScope.launch {
-            preferences.setLlmModelName(modelName)
+            preferences.setLlmModelName(modelName.trim())
         }
     }
 

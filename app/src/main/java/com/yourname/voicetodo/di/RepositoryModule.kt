@@ -7,5 +7,6 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+
     // Database providers moved to TodoDatabaseModule
 }

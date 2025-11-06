@@ -75,8 +75,20 @@ fun SettingsScreen(
     var showGeminiApiKey by remember { mutableStateOf(false) }
     var themeExpanded by remember { mutableStateOf(false) }
 
+    // Local state for text fields to prevent cursor jumping
+    var llmBaseUrlText by remember { mutableStateOf("") }
+    var llmModelNameText by remember { mutableStateOf("") }
+
     LaunchedEffect(llmApiKey) {
         tempLlmApiKey = llmApiKey
+    }
+
+    LaunchedEffect(llmBaseUrl) {
+        llmBaseUrlText = llmBaseUrl
+    }
+
+    LaunchedEffect(llmModelName) {
+        llmModelNameText = llmModelName
     }
 
     Scaffold(
@@ -100,14 +112,28 @@ fun SettingsScreen(
         ) {
             // LLM Provider Settings
             SettingsSection(title = "LLM Provider Settings") {
-                OutlinedTextField(
-                    value = llmBaseUrl,
-                    onValueChange = viewModel::updateLlmBaseUrl,
-                    label = { Text("Base URL") },
-                    placeholder = { Text("https://api.openai.com/v1") },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-                )
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = llmBaseUrlText,
+                        onValueChange = { llmBaseUrlText = it },
+                        label = { Text("Base URL") },
+                        placeholder = { Text("https://api.openai.com/v1") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.updateLlmBaseUrl(llmBaseUrlText.trim())
+                        },
+                        enabled = llmBaseUrlText.trim() != llmBaseUrl
+                    ) {
+                        Text("Save")
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -133,13 +159,38 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = llmModelName,
-                    onValueChange = viewModel::updateLlmModelName,
-                    label = { Text("Model Name") },
-                    placeholder = { Text("gpt-4") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = llmModelNameText,
+                            onValueChange = { llmModelNameText = it },
+                            label = { Text("Model Name") },
+                            placeholder = { Text("gpt-4") },
+                            modifier = Modifier.weight(1f),
+                            isError = llmModelNameText.contains(" ")
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                viewModel.updateLlmModelName(llmModelNameText.trim())
+                            },
+                            enabled = llmModelNameText.trim() != llmModelName && !llmModelNameText.contains(" ")
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                    if (llmModelNameText.contains(" ")) {
+                        Text(
+                            text = "Model names should not contain spaces",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
