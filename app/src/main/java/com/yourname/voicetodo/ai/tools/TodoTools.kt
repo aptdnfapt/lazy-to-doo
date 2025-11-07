@@ -211,7 +211,7 @@ class TodoTools @Inject constructor(
                     TodoSection.DONE -> "✅"
                     TodoSection.DO_LATER -> "⏰"
                 }
-                "$status [${todo.id.take(8)}] ${todo.description}"
+                "$status [${todo.id}] ${todo.description}"
             }
 
             "🔧 Tool Call: listTodos\n📋 Todos:\n$todoList"
