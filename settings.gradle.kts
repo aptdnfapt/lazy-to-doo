@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Voice Todo"
 include(":app")
+include(":standalone-test")

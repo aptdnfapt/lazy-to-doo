@@ -14,6 +14,8 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLMCapability
+import com.yourname.voicetodo.ai.execution.RetryableToolExecutor
+import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +23,9 @@ import javax.inject.Singleton
 @Singleton
 class TodoAgent @Inject constructor(
     private val todoTools: TodoTools,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val permissionManager: ToolPermissionManager,
+    private val retryableToolExecutor: RetryableToolExecutor
 ) {
 
     private val systemPrompt = """
@@ -104,11 +108,37 @@ class TodoAgent @Inject constructor(
                 tool(SayToUser)
                 tool(AskUser)
                 tools(todoTools)
-            }
+            },
+            maxIterations = 20
         )
     }
 
     suspend fun runAgent(userMessage: String, chatHistory: List<com.yourname.voicetodo.domain.model.Message> = emptyList()): String {
+        val agent = createAgent()
+
+        // Build conversation context from chat history
+        val conversationContext = if (chatHistory.isNotEmpty()) {
+            val historyText = chatHistory.joinToString("\n") { message ->
+                val role = if (message.isFromUser) "User" else "Assistant"
+                "$role: ${message.content}"
+            }
+            "$historyText\nUser: $userMessage"
+        } else {
+            userMessage
+        }
+
+        return try {
+            agent.run(conversationContext)
+        } catch (e: Exception) {
+            "Sorry, I encountered an error: ${e.message}"
+        }
+    }
+
+    suspend fun runAgentWithPermissions(
+        userMessage: String,
+        chatHistory: List<com.yourname.voicetodo.domain.model.Message> = emptyList(),
+        onToolCallRequested: suspend (String, Map<String, Any?>) -> Boolean
+    ): String {
         val agent = createAgent()
 
         // Build conversation context from chat history

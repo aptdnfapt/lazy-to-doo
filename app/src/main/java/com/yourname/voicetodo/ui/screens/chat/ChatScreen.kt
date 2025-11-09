@@ -15,8 +15,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.yourname.voicetodo.ui.screens.chat.components.MessageBubble
 import com.yourname.voicetodo.ui.screens.chat.components.MicButton
+import com.yourname.voicetodo.ui.screens.chat.components.ToolPermissionDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,6 +60,10 @@ fun ChatScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val amplitude by viewModel.amplitude.collectAsState()
     val currentModel by viewModel.currentModel.collectAsState()
+
+    // NEW: Tool activity state
+    val toolActivities by viewModel.toolActivities.collectAsState()
+    val showPermissionDialog by viewModel.showPermissionDialog.collectAsState()
 
     var textInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -114,6 +124,16 @@ fun ChatScreen(
                 MessageBubble(
                     message = message
                 )
+            }
+
+            // NEW: Tool activities section
+            item {
+                if (toolActivities.isNotEmpty()) {
+                    ToolActivitiesSection(
+                        activities = toolActivities,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
 
@@ -193,6 +213,18 @@ fun ChatScreen(
                 onRecordingStop = { viewModel.stopRecording() }
             )
         }
+
+        // NEW: Permission dialog
+        showPermissionDialog?.let { activity ->
+            ToolPermissionDialog(
+                toolName = activity.toolName,
+                toolArguments = activity.arguments,
+                onDismiss = { viewModel.onPermissionDeny(activity.id) },
+                onAllowOnce = { viewModel.onPermissionAllowOnce(activity.id) },
+                onAlwaysAllow = { viewModel.onPermissionAlwaysAllow(activity.id, activity.toolName) },
+                onDeny = { viewModel.onPermissionDeny(activity.id) }
+            )
+        }
     }
 }
 
@@ -215,5 +247,90 @@ private fun StatusIndicator(message: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun ToolActivitiesSection(
+    activities: List<ChatViewModel.ToolActivity>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Agent Activity",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        activities.forEach { activity ->
+            ToolActivityItem(activity = activity)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ToolActivityItem(activity: ChatViewModel.ToolActivity) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = when (activity.status) {
+                ChatViewModel.ToolStatus.SUCCESS -> MaterialTheme.colorScheme.primaryContainer
+                ChatViewModel.ToolStatus.FAILED -> MaterialTheme.colorScheme.errorContainer
+                ChatViewModel.ToolStatus.DENIED -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status icon
+            Icon(
+                imageVector = when (activity.status) {
+                    ChatViewModel.ToolStatus.PENDING_PERMISSION -> Icons.Default.Lock
+                    ChatViewModel.ToolStatus.EXECUTING -> Icons.Default.Refresh
+                    ChatViewModel.ToolStatus.RETRYING -> Icons.Default.Refresh
+                    ChatViewModel.ToolStatus.SUCCESS -> Icons.Default.Check
+                    ChatViewModel.ToolStatus.FAILED -> Icons.Default.Close
+                    ChatViewModel.ToolStatus.DENIED -> Icons.Default.Close
+                },
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = activity.toolName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = when (activity.status) {
+                        ChatViewModel.ToolStatus.PENDING_PERMISSION -> "Waiting for permission..."
+                        ChatViewModel.ToolStatus.EXECUTING -> "Executing..."
+                        ChatViewModel.ToolStatus.RETRYING -> "Retrying..."
+                        ChatViewModel.ToolStatus.SUCCESS -> activity.result ?: "Success"
+                        ChatViewModel.ToolStatus.FAILED -> activity.result ?: "Failed"
+                        ChatViewModel.ToolStatus.DENIED -> "Permission denied"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (activity.status == ChatViewModel.ToolStatus.EXECUTING ||
+                activity.status == ChatViewModel.ToolStatus.RETRYING
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+        }
     }
 }

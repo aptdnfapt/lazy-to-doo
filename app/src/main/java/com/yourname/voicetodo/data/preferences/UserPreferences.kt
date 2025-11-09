@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -94,6 +96,18 @@ class UserPreferences @Inject constructor(
     suspend fun setAutoExecute(autoExecute: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.AUTO_EXECUTE] = autoExecute
+        }
+    }
+
+    // Tool Permissions
+    fun getAllowedTools(): Flow<List<String>> = dataStore.data.map { preferences ->
+        val json = preferences[PreferencesKeys.ALLOWED_TOOLS] ?: "[]"
+        Json.decodeFromString<List<String>>(json)
+    }
+
+    suspend fun setAllowedTools(tools: List<String>) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ALLOWED_TOOLS] = Json.encodeToString(tools)
         }
     }
 }

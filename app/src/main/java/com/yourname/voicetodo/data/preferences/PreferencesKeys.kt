@@ -18,4 +18,7 @@ object PreferencesKeys {
     val THEME = stringPreferencesKey("theme") // "light", "dark", "system"
     val TTS_ENABLED = booleanPreferencesKey("tts_enabled")
     val AUTO_EXECUTE = booleanPreferencesKey("auto_execute")
+
+    // Tool Permissions
+    val ALLOWED_TOOLS = stringPreferencesKey("allowed_tools")
 }

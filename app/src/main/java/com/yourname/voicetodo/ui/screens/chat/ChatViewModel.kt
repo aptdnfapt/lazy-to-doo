@@ -3,6 +3,9 @@ package com.yourname.voicetodo.ui.screens.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.voicetodo.ai.agent.TodoAgent
+import com.yourname.voicetodo.ai.events.ToolExecutionEvents
+import com.yourname.voicetodo.ai.events.ToolExecutionEvents.ToolCallRequest
+import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
 import com.yourname.voicetodo.data.preferences.UserPreferences
@@ -26,7 +29,8 @@ class ChatViewModel @Inject constructor(
     private val transcriber: WhisperTranscriber,
     private val recorder: RecorderManager,
     private val userPreferences: UserPreferences,
-    private val chatRepository: com.yourname.voicetodo.data.repository.ChatRepository
+    private val chatRepository: com.yourname.voicetodo.data.repository.ChatRepository,
+    private val permissionManager: ToolPermissionManager
 ) : ViewModel() {
 
     private var currentSessionId: String = ""
@@ -48,6 +52,34 @@ class ChatViewModel @Inject constructor(
 
     private val _amplitude = MutableStateFlow(0)
     val amplitude: StateFlow<Int> = _amplitude.asStateFlow()
+
+    // NEW: Tool activity tracking
+    data class ToolActivity(
+        val id: String = UUID.randomUUID().toString(),
+        val toolName: String,
+        val arguments: Map<String, Any?>,
+        val status: ToolStatus,
+        val result: String? = null,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+
+    enum class ToolStatus {
+        PENDING_PERMISSION,
+        EXECUTING,
+        RETRYING,
+        SUCCESS,
+        FAILED,
+        DENIED
+    }
+
+    private val _toolActivities = MutableStateFlow<List<ToolActivity>>(emptyList())
+    val toolActivities: StateFlow<List<ToolActivity>> = _toolActivities.asStateFlow()
+
+    private val _showPermissionDialog = MutableStateFlow<ToolActivity?>(null)
+    val showPermissionDialog: StateFlow<ToolActivity?> = _showPermissionDialog.asStateFlow()
+
+    // Store pending permission request
+    private var pendingPermissionRequest: ToolCallRequest? = null
 
     // Get LLM config from preferences
     private val llmConfig = combine(
@@ -73,6 +105,14 @@ class ChatViewModel @Inject constructor(
         // Set up amplitude monitoring
         recorder.setOnUpdateMicrophoneAmplitude { amplitude ->
             _amplitude.value = amplitude
+        }
+
+        // Listen for tool permission requests
+        viewModelScope.launch {
+            ToolExecutionEvents.pendingRequests.collect { request ->
+                pendingPermissionRequest = request
+                addToolActivity(request.toolName, request.arguments)
+            }
         }
     }
 
@@ -241,6 +281,56 @@ class ChatViewModel @Inject constructor(
         } catch (e: Exception) {
             _errorMessage.value = "Failed to save message: ${e.message}"
         }
+    }
+
+    // NEW: Add tool activity
+    fun addToolActivity(toolName: String, arguments: Map<String, Any?>) {
+        val activity = ToolActivity(
+            toolName = toolName,
+            arguments = arguments,
+            status = ToolStatus.PENDING_PERMISSION
+        )
+        _toolActivities.value = _toolActivities.value + activity
+        _showPermissionDialog.value = activity
+    }
+
+    // NEW: Update tool activity status
+    fun updateToolActivity(activityId: String, status: ToolStatus, result: String? = null) {
+        _toolActivities.value = _toolActivities.value.map { activity ->
+            if (activity.id == activityId) {
+                activity.copy(status = status, result = result)
+            } else {
+                activity
+            }
+        }
+    }
+
+    // NEW: Handle permission responses
+    fun onPermissionAllowOnce(activityId: String) {
+        updateToolActivity(activityId, ToolStatus.EXECUTING)
+        _showPermissionDialog.value = null
+        // Respond to the pending request
+        pendingPermissionRequest?.onResponse?.invoke(true)
+        pendingPermissionRequest = null
+    }
+
+    fun onPermissionAlwaysAllow(activityId: String, toolName: String) {
+        viewModelScope.launch {
+            permissionManager.setToolAlwaysAllowed(toolName, true)
+            updateToolActivity(activityId, ToolStatus.EXECUTING)
+            _showPermissionDialog.value = null
+            // Respond to the pending request
+            pendingPermissionRequest?.onResponse?.invoke(true)
+            pendingPermissionRequest = null
+        }
+    }
+
+    fun onPermissionDeny(activityId: String) {
+        updateToolActivity(activityId, ToolStatus.DENIED, result = "Permission denied by user")
+        _showPermissionDialog.value = null
+        // Respond to the pending request
+        pendingPermissionRequest?.onResponse?.invoke(false)
+        pendingPermissionRequest = null
     }
 
     override fun onCleared() {

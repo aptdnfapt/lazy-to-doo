@@ -2,6 +2,8 @@ package com.yourname.voicetodo.di
 
 import android.content.Context
 import com.yourname.voicetodo.ai.agent.TodoAgent
+import com.yourname.voicetodo.ai.execution.RetryableToolExecutor
+import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.ai.tools.TodoTools
 import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
@@ -30,18 +32,38 @@ object AIModule {
 
     @Provides
     @Singleton
+    fun provideToolPermissionManager(
+        userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences
+    ): ToolPermissionManager {
+        return ToolPermissionManager(userPreferences)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetryableToolExecutor(
+        permissionManager: ToolPermissionManager
+    ): RetryableToolExecutor {
+        return RetryableToolExecutor(permissionManager)
+    }
+
+    @Provides
+    @Singleton
     fun provideTodoTools(
-        todoRepository: com.yourname.voicetodo.data.repository.TodoRepository
+        todoRepository: com.yourname.voicetodo.data.repository.TodoRepository,
+        permissionManager: ToolPermissionManager,
+        retryableToolExecutor: RetryableToolExecutor
     ): TodoTools {
-        return TodoTools(todoRepository)
+        return TodoTools(todoRepository, permissionManager, retryableToolExecutor)
     }
 
     @Provides
     @Singleton
     fun provideTodoAgent(
         todoTools: TodoTools,
-        userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences
+        userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences,
+        permissionManager: ToolPermissionManager,
+        retryableToolExecutor: RetryableToolExecutor
     ): TodoAgent {
-        return TodoAgent(todoTools, userPreferences)
+        return TodoAgent(todoTools, userPreferences, permissionManager, retryableToolExecutor)
     }
 }
