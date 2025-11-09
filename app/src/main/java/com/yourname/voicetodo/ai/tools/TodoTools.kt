@@ -33,10 +33,10 @@ class TodoTools @Inject constructor(
             
             val todo = repository.addTodo(
                 title = title,
-                description = description ?: title,
+                description = description,
                 section = todoSection
             )
-            "🔧 Tool Call: addTodo\n✅ Added todo: ${todo.description} in ${todoSection.name.replace("_", " ").lowercase()}"
+            "🔧 Tool Call: addTodo\n✅ Added todo: ${todo.title} in ${todoSection.name.replace("_", " ").lowercase()}"
         } catch (e: Exception) {
             "🔧 Tool Call: addTodo\n❌ Failed to add todo: ${e.message}"
         }
@@ -51,7 +51,7 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.deleteTodoById(todoId)
-                "🔧 Tool Call: removeTodo\n✅ Removed todo: ${todo.description}"
+                "🔧 Tool Call: removeTodo\n✅ Removed todo: ${todo.title}"
             } else {
                 "🔧 Tool Call: removeTodo\n❌ Todo with ID $todoId not found"
             }
@@ -89,7 +89,7 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.DONE)
-                "🔧 Tool Call: markComplete\n✅ Marked todo as complete: ${todo.description}"
+                "🔧 Tool Call: markComplete\n✅ Marked todo as complete: ${todo.title}"
             } else {
                 "🔧 Tool Call: markComplete\n❌ Todo with ID $todoId not found"
             }
@@ -107,7 +107,7 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.IN_PROGRESS)
-                "🔧 Tool Call: markInProgress\n🔄 Marked todo as in progress: ${todo.description}"
+                "🔧 Tool Call: markInProgress\n🔄 Marked todo as in progress: ${todo.title}"
             } else {
                 "🔧 Tool Call: markInProgress\n❌ Todo with ID $todoId not found"
             }
@@ -125,7 +125,7 @@ class TodoTools @Inject constructor(
             val todo = repository.getTodoById(todoId)
             if (todo != null) {
                 repository.updateTodoSection(todoId, TodoSection.DO_LATER)
-                "🔧 Tool Call: markDoLater\n⏰ Marked todo to do later: ${todo.description}"
+                "🔧 Tool Call: markDoLater\n⏰ Marked todo to do later: ${todo.title}"
             } else {
                 "🔧 Tool Call: markDoLater\n❌ Todo with ID $todoId not found"
             }
@@ -160,7 +160,7 @@ class TodoTools @Inject constructor(
             if (todo != null) {
                 repository.updateTodoReminder(todoId, time)
                 val reminderDate = java.util.Date(time)
-                "🔧 Tool Call: setReminder\n⏰ Set reminder for todo '${todo.description}' at $reminderDate"
+                "🔧 Tool Call: setReminder\n⏰ Set reminder for todo '${todo.title}' at $reminderDate"
             } else {
                 "🔧 Tool Call: setReminder\n❌ Todo with ID $todoId not found"
             }
@@ -211,7 +211,8 @@ class TodoTools @Inject constructor(
                     TodoSection.DONE -> "✅"
                     TodoSection.DO_LATER -> "⏰"
                 }
-                "$status [${todo.id}] ${todo.description}"
+                val desc = todo.description?.let { "\n   Description: \"$it\"" } ?: ""
+                "$status ${todo.title} [${todo.id}]$desc"
             }
 
             "🔧 Tool Call: listTodos\n📋 Todos:\n$todoList"

@@ -81,12 +81,22 @@ fun TodoItem(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = todo.description,
+                        text = todo.title,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+
+                    todo.description?.let {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 

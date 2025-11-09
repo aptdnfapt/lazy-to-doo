@@ -37,8 +37,8 @@ fun AddTodoDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, String?, TodoSection) -> Unit
 ) {
-    var title by remember(todo) { mutableStateOf(todo?.description ?: "") }
-    var description by remember(todo) { mutableStateOf("") }
+    var title by remember(todo) { mutableStateOf(todo?.title ?: "") }
+    var description by remember(todo) { mutableStateOf(todo?.description ?: "") }
     var selectedSection by remember(todo) { mutableStateOf(todo?.section ?: TodoSection.TODO) }
     var sectionExpanded by remember { mutableStateOf(false) }
 

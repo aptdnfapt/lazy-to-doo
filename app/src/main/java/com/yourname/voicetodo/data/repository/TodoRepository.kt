@@ -43,7 +43,8 @@ class TodoRepository @Inject constructor(
     ): Todo {
         val todo = Todo(
             id = UUID.randomUUID().toString(),
-            description = description?.ifBlank { null } ?: title,
+            title = title,
+            description = description?.ifBlank { null },
             section = section,
             reminderTime = reminderTime
         )
@@ -84,6 +85,7 @@ class TodoRepository @Inject constructor(
 private fun TodoEntity.toDomainModel(): Todo {
     return Todo(
         id = id,
+        title = title,
         description = description,
         section = TodoSection.valueOf(section),
         createdAt = createdAt,
@@ -94,8 +96,8 @@ private fun TodoEntity.toDomainModel(): Todo {
 private fun Todo.toEntity(): TodoEntity {
     return TodoEntity(
         id = id,
-        title = description, // Use description as title for simplicity
-        description = description,
+        title = title,
+        description = description ?: "",
         section = section.name,
         createdAt = createdAt,
         completedAt = if (section == TodoSection.DONE) System.currentTimeMillis() else null,
