@@ -4,7 +4,30 @@ An AI-powered voice-controlled todo app for Android. Just speak naturally and le
 
 ## Status
 
-**Early MVP** - This is a work in progress. Package naming and branding will be finalized in future releases.
+**Early MVP** - This is a work in progress. Package naming and branding will be finalized in future releases open for suggestion . Check out our for dev work , any questions or help  [discord](https://discord.gg/6S7HwCxbMy)
+
+## Setup
+
+1. **Download the App**
+   - Go to [Releases](../../releases)
+   - Download the latest `app-debug.apk`
+   - Install on your Android device (requires enabling "Install from Unknown Sources")
+
+2. **Configure API Keys**
+   - Open the app and go to Settings
+   - **AI Provider** (Required):
+     - Enter your OpenAI API key, OR
+     - Use any OpenAI-compatible API (like Qwen, Open router , etc.)
+     - Set the Base URL if using a compatible provider
+   - **Gemini API Key** (Optional but recommended):
+     - Used for voice-to-text transcription
+     - Get a free key from [Google AI Studio](https://aistudio.google.com/)
+     - Without this, voice features won't work
+
+3. **Start Using**
+   - Tap the microphone button and start speaking or just chat 
+   - Grant microphone permissions when prompted
+   - Your todos will be managed through natural conversation
 
 ## Features
 
