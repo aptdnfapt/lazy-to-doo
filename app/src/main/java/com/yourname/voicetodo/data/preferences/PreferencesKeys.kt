@@ -15,7 +15,7 @@ object PreferencesKeys {
     val VOICE_INPUT_ENABLED = booleanPreferencesKey("voice_input_enabled")
     
     // General Settings
-    val THEME = stringPreferencesKey("theme") // "light", "dark", "system"
+    val THEME_MODE = stringPreferencesKey("theme_mode")
     val TTS_ENABLED = booleanPreferencesKey("tts_enabled")
     val AUTO_EXECUTE = booleanPreferencesKey("auto_execute")
 

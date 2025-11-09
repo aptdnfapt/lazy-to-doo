@@ -43,15 +43,16 @@ fun MessageBubble(
             // Bot avatar
             Box(
                 modifier = Modifier
-                    .width(40.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .width(32.dp)
+                    .height(32.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "🤖",
-                    fontSize = 20.sp
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -101,24 +102,6 @@ fun MessageBubble(
                     top = 2.dp
                 )
             )
-        }
-        
-        if (isUser) {
-            Spacer(modifier = Modifier.width(8.dp))
-            // User avatar
-            Box(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.secondary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "👤",
-                    fontSize = 20.sp
-                )
-            }
         }
     }
 }

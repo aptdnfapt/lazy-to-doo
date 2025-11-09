@@ -30,4 +30,7 @@ interface MessageDao {
 
     @Query("SELECT COUNT(*) FROM messages WHERE sessionId = :sessionId")
     suspend fun getMessageCountForSession(sessionId: String): Int
+
+    @Query("UPDATE messages SET toolStatus = :status, toolResult = :result WHERE id = :messageId")
+    suspend fun updateToolCallMessageStatus(messageId: String, status: String, result: String?)
 }

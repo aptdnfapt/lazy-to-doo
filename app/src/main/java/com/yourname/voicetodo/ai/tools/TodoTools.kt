@@ -110,6 +110,38 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
+    @LLMDescription("Edit the title of an existing todo")
+    suspend fun editTitle(
+        @LLMDescription("Todo ID") todoId: String,
+        @LLMDescription("New title") newTitle: String
+    ): String = executeWithPermission(
+        toolName = "editTitle",
+        arguments = mapOf("todoId" to todoId, "newTitle" to newTitle)
+    ) {
+        retryableToolExecutor.executeWithRetry(
+            request = RetryableToolExecutor.ToolExecutionRequest(
+                toolName = "editTitle",
+                arguments = mapOf("todoId" to todoId, "newTitle" to newTitle),
+                executeFunction = {
+                    try {
+                        val todo = repository.getTodoById(todoId)
+                        if (todo != null) {
+                            val updatedTodo = todo.copy(title = newTitle)
+                            repository.updateTodo(updatedTodo)
+                            "🔧 Tool Call: editTitle\n✅ Updated todo title to: $newTitle"
+                        } else {
+                            "🔧 Tool Call: editTitle\n❌ Todo with ID $todoId not found"
+                        }
+                    } catch (e: Exception) {
+                        "🔧 Tool Call: editTitle\n❌ Failed: ${e.message}"
+                    }
+                }
+            ),
+            checkPermission = { true }
+        ).result ?: throw Exception("Tool execution failed")
+    }
+
+    @Tool
     @LLMDescription("Edit todo description")
     suspend fun editDescription(
         @LLMDescription("Todo ID") todoId: String,

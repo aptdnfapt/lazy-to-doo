@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -51,13 +52,13 @@ fun MicButton(
 
     Box(
         modifier = modifier
-            .size(80.dp)
+            .size(56.dp)  // Reduced from 80dp
             .scale(scale)
             .clip(CircleShape)
             .background(backgroundColor)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = false, radius = 40.dp),
+                indication = rememberRipple(bounded = false, radius = 28.dp),
                 onClick = {
                     if (isRecording) {
                         onRecordingStop()
@@ -68,21 +69,12 @@ fun MicButton(
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (isRecording) {
-            // Simple recording indicator
-            Text(
-                text = "🔴",
-                fontSize = 32.sp,
-                modifier = Modifier.padding(8.dp)
-            )
-        } else {
-            // Microphone icon using text
-            Text(
-                text = "🎤",
-                fontSize = 32.sp,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
+        Text(
+            text = if (isRecording) "■" else "MIC",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     }
 }
 

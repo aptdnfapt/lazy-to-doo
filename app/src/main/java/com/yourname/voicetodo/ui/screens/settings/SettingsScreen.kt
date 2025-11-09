@@ -52,12 +52,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
+import com.yourname.voicetodo.data.preferences.UserPreferences
 import com.yourname.voicetodo.ui.navigation.NavGraph
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit = {},
+    onNavigateToToolPermissions: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val llmBaseUrl by viewModel.llmBaseUrl.collectAsState()
@@ -65,7 +67,7 @@ fun SettingsScreen(
     val llmModelName by viewModel.llmModelName.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val voiceInputEnabled by viewModel.voiceInputEnabled.collectAsState()
-    val theme by viewModel.theme.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
     val ttsEnabled by viewModel.ttsEnabled.collectAsState()
     val autoExecute by viewModel.autoExecute.collectAsState()
 
@@ -236,7 +238,11 @@ fun SettingsScreen(
                     onExpandedChange = { themeExpanded = !themeExpanded }
                 ) {
                     OutlinedTextField(
-                        value = theme.replaceFirstChar { it.uppercase() },
+                        value = when (themeMode) {
+                            UserPreferences.ThemeMode.LIGHT -> "Light"
+                            UserPreferences.ThemeMode.DARK -> "Dark"
+                            UserPreferences.ThemeMode.SYSTEM -> "System"
+                        },
                         onValueChange = { },
                         readOnly = true,
                         label = { Text("App Theme") },
@@ -249,11 +255,15 @@ fun SettingsScreen(
                         expanded = themeExpanded,
                         onDismissRequest = { themeExpanded = false }
                     ) {
-                        listOf("system", "light", "dark").forEach { themeOption ->
+                        listOf(
+                            UserPreferences.ThemeMode.SYSTEM to "System",
+                            UserPreferences.ThemeMode.LIGHT to "Light",
+                            UserPreferences.ThemeMode.DARK to "Dark"
+                        ).forEach { (mode, label) ->
                             DropdownMenuItem(
-                                text = { Text(themeOption.replaceFirstChar { it.uppercase() }) },
+                                text = { Text(label) },
                                 onClick = {
-                                    viewModel.updateTheme(themeOption)
+                                    viewModel.updateThemeMode(mode)
                                     themeExpanded = false
                                 }
                             )

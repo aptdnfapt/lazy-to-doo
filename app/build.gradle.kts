@@ -5,6 +5,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
 android {
@@ -98,6 +99,9 @@ dependencies {
     
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // Kotlinx Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     
     // Security (Encrypted SharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

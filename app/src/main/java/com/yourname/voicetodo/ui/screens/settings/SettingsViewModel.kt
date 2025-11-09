@@ -36,8 +36,8 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     // General Settings
-    val theme = preferences.getTheme()
-        .stateIn(viewModelScope, SharingStarted.Lazily, "system")
+    val themeMode = preferences.getThemeMode()
+        .stateIn(viewModelScope, SharingStarted.Lazily, UserPreferences.ThemeMode.SYSTEM)
 
     val ttsEnabled = preferences.getTtsEnabled()
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
@@ -76,9 +76,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun updateTheme(theme: String) {
+    fun updateThemeMode(mode: UserPreferences.ThemeMode) {
         viewModelScope.launch {
-            preferences.setTheme(theme)
+            preferences.setThemeMode(mode)
         }
     }
 

@@ -33,7 +33,8 @@ class TodoAgent @Inject constructor(
 
         Your capabilities include:
         - Adding new todos with titles and descriptions
-        - Editing existing todos
+        - Editing todo titles                              // <- NEW
+        - Editing existing todo descriptions
         - Marking todos as complete, in progress, or do later
         - Removing todos
         - Setting reminders for todos
@@ -129,6 +130,9 @@ class TodoAgent @Inject constructor(
 
         return try {
             agent.run(conversationContext)
+        } catch (e: SecurityException) {
+            // Permission denied - return error message and stop
+            "⛔ Action cancelled: ${e.message}"
         } catch (e: Exception) {
             "Sorry, I encountered an error: ${e.message}"
         }
@@ -154,6 +158,9 @@ class TodoAgent @Inject constructor(
 
         return try {
             agent.run(conversationContext)
+        } catch (e: SecurityException) {
+            // Permission denied - return error message and stop
+            "⛔ Action cancelled: ${e.message}"
         } catch (e: Exception) {
             "Sorry, I encountered an error: ${e.message}"
         }

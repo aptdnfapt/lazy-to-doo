@@ -13,7 +13,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.yourname.voicetodo.ai.transcription.RecorderManager
+import com.yourname.voicetodo.data.preferences.UserPreferences
 import com.yourname.voicetodo.ui.navigation.BottomNavigationBar
 import com.yourname.voicetodo.ui.navigation.NavGraph
 import com.yourname.voicetodo.ui.theme.VoiceTodoTheme
@@ -25,6 +30,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var recorderManager: RecorderManager
+
+    @Inject
+    lateinit var userPreferences: UserPreferences
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -44,7 +52,15 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
 
         setContent {
-            VoiceTodoTheme {
+            val themeMode by userPreferences.getThemeMode().collectAsState(initial = UserPreferences.ThemeMode.SYSTEM)
+
+            val darkTheme = when (themeMode) {
+                UserPreferences.ThemeMode.LIGHT -> false
+                UserPreferences.ThemeMode.DARK -> true
+                UserPreferences.ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+
+            VoiceTodoTheme(darkTheme = darkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

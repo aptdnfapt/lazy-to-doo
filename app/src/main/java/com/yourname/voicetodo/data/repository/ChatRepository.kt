@@ -6,6 +6,7 @@ import com.yourname.voicetodo.data.local.MessageDao
 import com.yourname.voicetodo.data.local.MessageEntity
 import com.yourname.voicetodo.domain.model.ChatSession
 import com.yourname.voicetodo.domain.model.Message
+import com.yourname.voicetodo.domain.model.MessageType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -91,7 +92,12 @@ class ChatRepository @Inject constructor(
                     sessionId = entity.sessionId,
                     content = entity.content,
                     isFromUser = entity.isFromUser,
-                    timestamp = entity.timestamp
+                    timestamp = entity.timestamp,
+                    messageType = try { MessageType.valueOf(entity.messageType) } catch (e: Exception) { MessageType.TEXT },
+                    toolName = entity.toolName,
+                    toolArguments = entity.toolArguments,
+                    toolStatus = entity.toolStatus,
+                    toolResult = entity.toolResult
                 )
             }
         }
@@ -114,6 +120,28 @@ class ChatRepository @Inject constructor(
         messageDao.insertMessage(entity)
         chatSessionDao.updateChatSessionTimestamp(sessionId, System.currentTimeMillis())
         return message
+    }
+
+    suspend fun addMessage(message: Message): Message {
+        val entity = MessageEntity(
+            id = message.id,
+            sessionId = message.sessionId,
+            content = message.content,
+            isFromUser = message.isFromUser,
+            timestamp = message.timestamp,
+            messageType = message.messageType.name,
+            toolName = message.toolName,
+            toolArguments = message.toolArguments,
+            toolStatus = message.toolStatus,
+            toolResult = message.toolResult
+        )
+        messageDao.insertMessage(entity)
+        chatSessionDao.updateChatSessionTimestamp(message.sessionId, System.currentTimeMillis())
+        return message
+    }
+
+    suspend fun updateToolCallMessageStatus(messageId: String, status: String, result: String? = null) {
+        messageDao.updateToolCallMessageStatus(messageId, status, result)
     }
 
     suspend fun deleteMessage(messageId: String) {

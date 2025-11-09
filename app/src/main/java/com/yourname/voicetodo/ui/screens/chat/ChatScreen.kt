@@ -44,7 +44,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.yourname.voicetodo.ui.screens.chat.components.MessageBubble
 import com.yourname.voicetodo.ui.screens.chat.components.MicButton
-import com.yourname.voicetodo.ui.screens.chat.components.ToolPermissionDialog
+import com.yourname.voicetodo.ui.screens.chat.components.ToolCallBubble
+import com.yourname.voicetodo.domain.model.MessageType
+import com.yourname.voicetodo.domain.model.ToolCallStatus
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.launch
 
 @Composable
@@ -61,9 +64,7 @@ fun ChatScreen(
     val amplitude by viewModel.amplitude.collectAsState()
     val currentModel by viewModel.currentModel.collectAsState()
 
-    // NEW: Tool activity state
-    val toolActivities by viewModel.toolActivities.collectAsState()
-    val showPermissionDialog by viewModel.showPermissionDialog.collectAsState()
+
 
     var textInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -121,17 +122,24 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages) { message ->
-                MessageBubble(
-                    message = message
-                )
-            }
-
-            // NEW: Tool activities section
-            item {
-                if (toolActivities.isNotEmpty()) {
-                    ToolActivitiesSection(
-                        activities = toolActivities,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                if (message.messageType == MessageType.TEXT) {
+                    // Regular message bubble
+                    MessageBubble(message = message)
+                } else {
+                    // Tool call bubble
+                    val toolCall = message.toToolCallMessage()
+                    ToolCallBubble(
+                        toolCall = toolCall,
+                        onApproveAlways = {
+                            viewModel.onToolCallApproveAlways(message.id, toolCall.toolName)
+                        },
+                        onApproveOnce = {
+                            viewModel.onToolCallApproveOnce(message.id)
+                        },
+                        onDeny = {
+                            viewModel.onToolCallDeny(message.id)
+                        },
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
             }
@@ -214,17 +222,7 @@ fun ChatScreen(
             )
         }
 
-        // NEW: Permission dialog
-        showPermissionDialog?.let { activity ->
-            ToolPermissionDialog(
-                toolName = activity.toolName,
-                toolArguments = activity.arguments,
-                onDismiss = { viewModel.onPermissionDeny(activity.id) },
-                onAllowOnce = { viewModel.onPermissionAllowOnce(activity.id) },
-                onAlwaysAllow = { viewModel.onPermissionAlwaysAllow(activity.id, activity.toolName) },
-                onDeny = { viewModel.onPermissionDeny(activity.id) }
-            )
-        }
+
     }
 }
 
@@ -250,87 +248,30 @@ private fun StatusIndicator(message: String) {
     }
 }
 
-@Composable
-private fun ToolActivitiesSection(
-    activities: List<ChatViewModel.ToolActivity>,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = "Agent Activity",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        activities.forEach { activity ->
-            ToolActivityItem(activity = activity)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+// Extension function to convert Message to ToolCallMessage
+private fun com.yourname.voicetodo.domain.model.Message.toToolCallMessage(): com.yourname.voicetodo.domain.model.ToolCallMessage {
+    // Parse JSON to Map<String, String> for display purposes
+    val arguments = try {
+        this.toolArguments?.let { 
+            Json.decodeFromString<Map<String, String>>(it) 
+        } ?: emptyMap()
+    } catch (e: Exception) {
+        emptyMap()
     }
+    
+    val status = try {
+        this.toolStatus?.let { ToolCallStatus.valueOf(it) } ?: ToolCallStatus.PENDING_APPROVAL
+    } catch (e: Exception) {
+        ToolCallStatus.PENDING_APPROVAL
+    }
+
+    return com.yourname.voicetodo.domain.model.ToolCallMessage(
+        id = this.id,
+        toolName = this.toolName ?: "",
+        arguments = arguments,
+        status = status,
+        result = this.toolResult,
+        timestamp = this.timestamp
+    )
 }
 
-@Composable
-private fun ToolActivityItem(activity: ChatViewModel.ToolActivity) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = when (activity.status) {
-                ChatViewModel.ToolStatus.SUCCESS -> MaterialTheme.colorScheme.primaryContainer
-                ChatViewModel.ToolStatus.FAILED -> MaterialTheme.colorScheme.errorContainer
-                ChatViewModel.ToolStatus.DENIED -> MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Status icon
-            Icon(
-                imageVector = when (activity.status) {
-                    ChatViewModel.ToolStatus.PENDING_PERMISSION -> Icons.Default.Lock
-                    ChatViewModel.ToolStatus.EXECUTING -> Icons.Default.Refresh
-                    ChatViewModel.ToolStatus.RETRYING -> Icons.Default.Refresh
-                    ChatViewModel.ToolStatus.SUCCESS -> Icons.Default.Check
-                    ChatViewModel.ToolStatus.FAILED -> Icons.Default.Close
-                    ChatViewModel.ToolStatus.DENIED -> Icons.Default.Close
-                },
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = activity.toolName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = when (activity.status) {
-                        ChatViewModel.ToolStatus.PENDING_PERMISSION -> "Waiting for permission..."
-                        ChatViewModel.ToolStatus.EXECUTING -> "Executing..."
-                        ChatViewModel.ToolStatus.RETRYING -> "Retrying..."
-                        ChatViewModel.ToolStatus.SUCCESS -> activity.result ?: "Success"
-                        ChatViewModel.ToolStatus.FAILED -> activity.result ?: "Failed"
-                        ChatViewModel.ToolStatus.DENIED -> "Permission denied"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (activity.status == ChatViewModel.ToolStatus.EXECUTING ||
-                activity.status == ChatViewModel.ToolStatus.RETRYING
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
-            }
-        }
-    }
-}

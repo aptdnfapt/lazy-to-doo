@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.yourname.voicetodo.ui.screens.chat.ChatListScreen
 import com.yourname.voicetodo.ui.screens.chat.ChatScreen
 import com.yourname.voicetodo.ui.screens.settings.SettingsScreen
+import com.yourname.voicetodo.ui.screens.settings.ToolPermissionsScreen
 import com.yourname.voicetodo.ui.screens.todos.TodoListScreen
 
 @Composable
@@ -40,7 +41,17 @@ fun NavGraph(
                 TodoListScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onBackClick = { /* No back button in bottom nav */ },
+                    onNavigateToToolPermissions = {
+                        navController.navigate(Screen.ToolPermissions.route)
+                    }
+                )
+            }
+            composable(Screen.ToolPermissions.route) {
+                ToolPermissionsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }

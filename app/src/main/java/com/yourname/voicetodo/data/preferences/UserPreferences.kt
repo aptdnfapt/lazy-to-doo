@@ -68,15 +68,22 @@ class UserPreferences @Inject constructor(
         }
     }
 
-    // General Settings
-    fun getTheme(): Flow<String> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.THEME] ?: "system"
+    // Theme preference
+    fun getThemeMode(): Flow<ThemeMode> = dataStore.data.map { preferences ->
+        val mode = preferences[PreferencesKeys.THEME_MODE] ?: "SYSTEM"
+        ThemeMode.valueOf(mode)
     }
 
-    suspend fun setTheme(theme: String) {
+    suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.THEME] = theme
+            preferences[PreferencesKeys.THEME_MODE] = mode.name
         }
+    }
+
+    enum class ThemeMode {
+        LIGHT,
+        DARK,
+        SYSTEM  // Follow system theme
     }
 
     fun getTtsEnabled(): Flow<Boolean> = dataStore.data.map { preferences ->

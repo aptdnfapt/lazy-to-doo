@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Database(
     entities = [TodoEntity::class, ChatSessionEntity::class, MessageEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(TodoTypeConverters::class)
@@ -37,7 +37,7 @@ object TodoDatabaseModule {
             context,
             TodoDatabase::class.java,
             "todo_database"
-        ).addMigrations(MIGRATION_1_2).fallbackToDestructiveMigration().build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).fallbackToDestructiveMigration().build()
     }
     
     @Provides
@@ -87,5 +87,17 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 
         // Create index for messages
         database.execSQL("CREATE INDEX IF NOT EXISTS index_messages_sessionId ON messages(sessionId)")
+    }
+}
+
+// Migration from version 2 to 3 - Add tool call message fields
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add new columns to messages table for tool call support
+        database.execSQL("ALTER TABLE messages ADD COLUMN messageType TEXT DEFAULT 'TEXT'")
+        database.execSQL("ALTER TABLE messages ADD COLUMN toolName TEXT")
+        database.execSQL("ALTER TABLE messages ADD COLUMN toolArguments TEXT")
+        database.execSQL("ALTER TABLE messages ADD COLUMN toolStatus TEXT")
+        database.execSQL("ALTER TABLE messages ADD COLUMN toolResult TEXT")
     }
 }

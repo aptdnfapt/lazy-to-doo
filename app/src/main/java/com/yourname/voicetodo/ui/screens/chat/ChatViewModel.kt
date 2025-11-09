@@ -10,6 +10,8 @@ import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
 import com.yourname.voicetodo.data.preferences.UserPreferences
 import com.yourname.voicetodo.domain.model.Message
+import com.yourname.voicetodo.domain.model.MessageType
+import com.yourname.voicetodo.domain.model.ToolCallStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +21,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -53,31 +57,6 @@ class ChatViewModel @Inject constructor(
     private val _amplitude = MutableStateFlow(0)
     val amplitude: StateFlow<Int> = _amplitude.asStateFlow()
 
-    // NEW: Tool activity tracking
-    data class ToolActivity(
-        val id: String = UUID.randomUUID().toString(),
-        val toolName: String,
-        val arguments: Map<String, Any?>,
-        val status: ToolStatus,
-        val result: String? = null,
-        val timestamp: Long = System.currentTimeMillis()
-    )
-
-    enum class ToolStatus {
-        PENDING_PERMISSION,
-        EXECUTING,
-        RETRYING,
-        SUCCESS,
-        FAILED,
-        DENIED
-    }
-
-    private val _toolActivities = MutableStateFlow<List<ToolActivity>>(emptyList())
-    val toolActivities: StateFlow<List<ToolActivity>> = _toolActivities.asStateFlow()
-
-    private val _showPermissionDialog = MutableStateFlow<ToolActivity?>(null)
-    val showPermissionDialog: StateFlow<ToolActivity?> = _showPermissionDialog.asStateFlow()
-
     // Store pending permission request
     private var pendingPermissionRequest: ToolCallRequest? = null
 
@@ -111,7 +90,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             ToolExecutionEvents.pendingRequests.collect { request ->
                 pendingPermissionRequest = request
-                addToolActivity(request.toolName, request.arguments)
+                addToolCallMessage(request.toolName, request.arguments, ToolCallStatus.PENDING_APPROVAL)
             }
         }
     }
@@ -283,54 +262,82 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // NEW: Add tool activity
-    fun addToolActivity(toolName: String, arguments: Map<String, Any?>) {
-        val activity = ToolActivity(
-            toolName = toolName,
-            arguments = arguments,
-            status = ToolStatus.PENDING_PERMISSION
-        )
-        _toolActivities.value = _toolActivities.value + activity
-        _showPermissionDialog.value = activity
-    }
+    // Add tool call message to chat
+    private suspend fun addToolCallMessage(
+        toolName: String,
+        arguments: Map<String, Any?>,
+        status: ToolCallStatus
+    ) {
+        if (currentSessionId.isEmpty()) return
 
-    // NEW: Update tool activity status
-    fun updateToolActivity(activityId: String, status: ToolStatus, result: String? = null) {
-        _toolActivities.value = _toolActivities.value.map { activity ->
-            if (activity.id == activityId) {
-                activity.copy(status = status, result = result)
-            } else {
-                activity
+        try {
+            // Convert Map<String, Any?> to Map<String, String> for serialization
+            val stringArguments = arguments.mapValues { (_, value) -> 
+                value?.toString() ?: "null" 
             }
+            
+            val toolCallMessage = Message(
+                id = UUID.randomUUID().toString(),
+                sessionId = currentSessionId,
+                content = "", // Not used for tool calls
+                isFromUser = false,
+                messageType = MessageType.TOOL_CALL,
+                toolName = toolName,
+                toolArguments = Json.encodeToString(stringArguments),
+                toolStatus = status.name
+            )
+
+            chatRepository.addMessage(toolCallMessage)
+        } catch (e: Exception) {
+            _errorMessage.value = "Failed to add tool call message: ${e.message}"
         }
     }
 
-    // NEW: Handle permission responses
-    fun onPermissionAllowOnce(activityId: String) {
-        updateToolActivity(activityId, ToolStatus.EXECUTING)
-        _showPermissionDialog.value = null
-        // Respond to the pending request
-        pendingPermissionRequest?.onResponse?.invoke(true)
-        pendingPermissionRequest = null
+    // Update tool call message status
+    private suspend fun updateToolCallMessageStatus(messageId: String, status: ToolCallStatus, result: String? = null) {
+        try {
+            chatRepository.updateToolCallMessageStatus(messageId, status.name, result)
+        } catch (e: Exception) {
+            _errorMessage.value = "Failed to update tool call status: ${e.message}"
+        }
     }
 
-    fun onPermissionAlwaysAllow(activityId: String, toolName: String) {
+    // Handle inline tool call approvals
+    fun onToolCallApproveOnce(messageId: String) {
         viewModelScope.launch {
-            permissionManager.setToolAlwaysAllowed(toolName, true)
-            updateToolActivity(activityId, ToolStatus.EXECUTING)
-            _showPermissionDialog.value = null
+            updateToolCallMessageStatus(messageId, ToolCallStatus.EXECUTING)
             // Respond to the pending request
             pendingPermissionRequest?.onResponse?.invoke(true)
             pendingPermissionRequest = null
         }
     }
 
-    fun onPermissionDeny(activityId: String) {
-        updateToolActivity(activityId, ToolStatus.DENIED, result = "Permission denied by user")
-        _showPermissionDialog.value = null
-        // Respond to the pending request
-        pendingPermissionRequest?.onResponse?.invoke(false)
-        pendingPermissionRequest = null
+    fun onToolCallApproveAlways(messageId: String, toolName: String) {
+        viewModelScope.launch {
+            permissionManager.setToolAlwaysAllowed(toolName, true)
+            updateToolCallMessageStatus(messageId, ToolCallStatus.EXECUTING)
+            // Respond to the pending request
+            pendingPermissionRequest?.onResponse?.invoke(true)
+            pendingPermissionRequest = null
+        }
+    }
+
+    fun onToolCallDeny(messageId: String) {
+        viewModelScope.launch {
+            updateToolCallMessageStatus(messageId, ToolCallStatus.DENIED)
+            // IMPORTANT: Stop agent execution completely
+            pendingPermissionRequest?.onResponse?.invoke(false)
+            pendingPermissionRequest = null
+
+            // Clear any ongoing processing state
+            _isProcessing.value = false
+
+            // Add system message explaining denial
+            addMessage(
+                content = "⛔ Tool execution denied. The agent has stopped processing. Please provide more details or rephrase your request to continue.",
+                isFromUser = false
+            )
+        }
     }
 
     override fun onCleared() {

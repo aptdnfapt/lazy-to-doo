@@ -22,5 +22,12 @@ data class MessageEntity(
     val sessionId: String,
     val content: String,
     val isFromUser: Boolean,
-    val timestamp: Long
+    val timestamp: Long,
+
+    // NEW: For tool call messages
+    val messageType: String = "TEXT",  // TEXT or TOOL_CALL
+    val toolName: String? = null,
+    val toolArguments: String? = null,  // JSON string
+    val toolStatus: String? = null,      // ToolCallStatus as string
+    val toolResult: String? = null
 )
