@@ -339,38 +339,59 @@ class ChatViewModel @Inject constructor(
     private suspend fun updateToolCallMessageStatus(messageId: String, status: ToolCallStatus, result: String? = null) {
         try {
             chatRepository.updateToolCallMessageStatus(messageId, status.name, result)
+            // Force a refresh of the messages to ensure UI updates immediately
+            val updatedMessages = chatRepository.getMessagesForSession(currentSessionId).first()
+            _messages.value = updatedMessages
+            android.util.Log.d("ChatViewModel", "Updated tool call status to $status for message $messageId")
         } catch (e: Exception) {
             _errorMessage.value = "Failed to update tool call status: ${e.message}"
+            android.util.Log.e("ChatViewModel", "Error updating tool call status", e)
         }
     }
 
     // Update tool call message on completion
     private suspend fun updateToolCallMessageOnCompletion(completion: ToolCallCompletion) {
         try {
+            android.util.Log.d("ChatViewModel", "Processing tool completion: ${completion.toolName}, success: ${completion.success}")
+
             // Find the tool call message that matches this completion
             val messages = _messages.value
-            
+
+            android.util.Log.d("ChatViewModel", "Looking for matching tool call message in ${messages.size} total messages")
+
             // Try multiple matching strategies to find the correct tool call message
             var toolCallMessage = findToolCallMessageByExactMatch(messages, completion)
-            
+
             // Fallback: try matching by tool name and status only if exact match fails
             if (toolCallMessage == null) {
                 toolCallMessage = findToolCallMessageByToolName(messages, completion)
             }
-            
+
             // Fallback: try matching by most recent executing tool with same name
             if (toolCallMessage == null) {
                 toolCallMessage = findMostRecentExecutingTool(messages, completion.toolName)
             }
 
+            // Ultra-fallback: try matching any tool with same name regardless of status
+            if (toolCallMessage == null) {
+                toolCallMessage = findMostRecentToolWithSameName(messages, completion.toolName)
+            }
+
             if (toolCallMessage != null) {
                 val status = if (completion.success) ToolCallStatus.SUCCESS else ToolCallStatus.FAILED
                 val result = completion.result ?: completion.error
+                android.util.Log.d("ChatViewModel", "Found matching message ${toolCallMessage.id}, updating to status: $status")
                 updateToolCallMessageStatus(toolCallMessage.id, status, result)
+                android.util.Log.d("ChatViewModel",
+                    "Successfully updated tool call message ${toolCallMessage.id} with status $status")
             } else {
-                // Log warning for debugging purposes
-                android.util.Log.w("ChatViewModel", 
+                // Log detailed information for debugging
+                android.util.Log.w("ChatViewModel",
                     "No matching tool call message found for completion: ${completion.toolName}")
+                android.util.Log.d("ChatViewModel", "Current tool call messages:")
+                messages.filter { it.messageType == MessageType.TOOL_CALL }.forEach { msg ->
+                    android.util.Log.d("ChatViewModel", "  - ${msg.toolName} [${msg.id}] status: ${msg.toolStatus}")
+                }
             }
         } catch (e: Exception) {
             _errorMessage.value = "Failed to update tool call on completion: ${e.message}"
@@ -378,57 +399,98 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    // Strategy 1: Exact match (original logic)
+    // Strategy 1: Exact match with both EXECUTING and PENDING_APPROVAL status
     private fun findToolCallMessageByExactMatch(
-        messages: List<Message>, 
+        messages: List<Message>,
         completion: ToolCallCompletion
     ): Message? {
         val completionArgsJson = Json.encodeToString(completion.arguments.mapValues { it.value?.toString() ?: "null" })
-        
-        return messages.find { message ->
+
+        android.util.Log.d("ChatViewModel", "Looking for exact match: tool=${completion.toolName}, args=${completionArgsJson}")
+
+        val match = messages.find { message ->
             message.messageType == MessageType.TOOL_CALL &&
             message.toolName == completion.toolName &&
             message.toolArguments == completionArgsJson &&
-            message.toolStatus == ToolCallStatus.EXECUTING.name
+            (message.toolStatus == ToolCallStatus.EXECUTING.name ||
+             message.toolStatus == ToolCallStatus.PENDING_APPROVAL.name)
         }
+
+        android.util.Log.d("ChatViewModel", "Exact match result: ${match?.id}")
+        return match
     }
     
     // Strategy 2: Match by tool name and compare arguments as maps (more flexible)
     private fun findToolCallMessageByToolName(
-        messages: List<Message>, 
+        messages: List<Message>,
         completion: ToolCallCompletion
     ): Message? {
         val completionArgs = completion.arguments.mapValues { it.value?.toString() ?: "null" }
-        
-        return messages.find { message ->
+
+        android.util.Log.d("ChatViewModel", "Trying tool name match: tool=${completion.toolName}, args=${completionArgs}")
+
+        val match = messages.find { message ->
             message.messageType == MessageType.TOOL_CALL &&
             message.toolName == completion.toolName &&
-            message.toolStatus == ToolCallStatus.EXECUTING.name &&
+            (message.toolStatus == ToolCallStatus.EXECUTING.name ||
+             message.toolStatus == ToolCallStatus.PENDING_APPROVAL.name) &&
             argumentsMatch(message.toolArguments, completionArgs)
         }
+
+        android.util.Log.d("ChatViewModel", "Tool name match result: ${match?.id}")
+        return match
     }
     
-    // Strategy 3: Match most recent executing tool with same name (last resort)
+    // Strategy 3: Match most recent executing or pending tool with same name (last resort)
     private fun findMostRecentExecutingTool(
-        messages: List<Message>, 
+        messages: List<Message>,
         toolName: String
     ): Message? {
-        return messages
+        val match = messages
             .filter { message ->
                 message.messageType == MessageType.TOOL_CALL &&
                 message.toolName == toolName &&
-                message.toolStatus == ToolCallStatus.EXECUTING.name
+                (message.toolStatus == ToolCallStatus.EXECUTING.name ||
+                 message.toolStatus == ToolCallStatus.PENDING_APPROVAL.name)
             }
             .maxByOrNull { it.timestamp }
+
+        android.util.Log.d("ChatViewModel", "Recent executing match result: ${match?.id}")
+        return match
+    }
+
+    // Strategy 4: Match any tool with same name (ultra-fallback for cases where status is wrong)
+    private fun findMostRecentToolWithSameName(
+        messages: List<Message>,
+        toolName: String
+    ): Message? {
+        val match = messages
+            .filter { message ->
+                message.messageType == MessageType.TOOL_CALL &&
+                message.toolName == toolName
+            }
+            .maxByOrNull { it.timestamp }
+
+        android.util.Log.d("ChatViewModel", "Recent any status match result: ${match?.id}")
+        return match
     }
     
     // Helper function to compare arguments more flexibly
     private fun argumentsMatch(storedArgsJson: String?, completionArgs: Map<String, String>): Boolean {
         if (storedArgsJson == null) return completionArgs.isEmpty()
-        
+
         return try {
             val storedArgs = Json.decodeFromString<Map<String, String>>(storedArgsJson)
-            storedArgs == completionArgs
+            // Compare keys and string representations of values
+            if (storedArgs.size != completionArgs.size) return false
+
+            storedArgs.all { (key, storedValue) ->
+                val completionValue = completionArgs[key]
+                // Direct string comparison
+                storedValue == completionValue ||
+                // Also allow comparison where completion value might be converted to string
+                storedValue == completionValue?.toString()
+            }
         } catch (e: Exception) {
             false
         }

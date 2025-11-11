@@ -105,6 +105,7 @@ fun TodoListScreen(
         if (showDialog) {
             AddTodoDialog(
                 todo = editingTodo,
+                categories = categories,
                 onDismiss = { viewModel.hideDialog() },
                 onConfirm = { title, description, categoryId, status ->
                     if (editingTodo != null) {

@@ -56,7 +56,12 @@ class TodoAgent @Inject constructor(
 
         IMPORTANT: Before taking any action on existing todos (like marking complete, editing, or deleting), first use the listTodos tool to see what todos are available. This helps you understand which todo the user is referring to. Look at the todo IDs and descriptions to match user requests accurately.
 
-        If you need clarification about a todo request, use the AskUser tool to ask for more information.
+        For adding todos, be intelligent and direct:
+        - Use the exact title provided by the user
+        - Use any description provided directly without modification - do NOT ask for clarification
+        - If no description is provided, pass null for the description parameter
+        - Only ask for clarification when critical information is missing (like the title itself)
+        - Prioritize understanding context and filling in reasonable defaults over asking questions
     """.trimIndent()
 
     suspend fun createAgent(): AIAgent<String, String> {

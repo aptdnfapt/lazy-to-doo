@@ -23,12 +23,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+private fun insertAtCursor(
+    textFieldValue: androidx.compose.ui.text.input.TextFieldValue,
+    insertText: String,
+    onContentChange: (String) -> Unit,
+    onTextFieldValueChange: (androidx.compose.ui.text.input.TextFieldValue) -> Unit
+) {
+    val newText = buildString {
+        append(textFieldValue.text.substring(0, textFieldValue.selection.start))
+        append(insertText)
+        append(textFieldValue.text.substring(textFieldValue.selection.end))
+    }
+    val newSelection = TextRange(
+        textFieldValue.selection.start + insertText.length
+    )
+    val newTextFieldValue = textFieldValue.copy(
+        text = newText,
+        selection = newSelection
+    )
+    onContentChange(newText)
+    onTextFieldValueChange(newTextFieldValue)
+}
 
 @Composable
 fun MarkdownEditor(
@@ -36,28 +64,42 @@ fun MarkdownEditor(
     onContentChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var textFieldValue by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(content)) }
+
+    // Update textFieldValue when content changes from external sources
+    LaunchedEffect(content) {
+        if (textFieldValue.text != content) {
+            textFieldValue = textFieldValue.copy(text = content)
+        }
+    }
+
     Column(modifier = modifier) {
         // Markdown toolbar
         MarkdownToolbar(
             onInsertCheckbox = {
-                val newContent = "$content\n- [ ] "
-                onContentChange(newContent)
+                insertAtCursor(textFieldValue, "\n- [ ] ", onContentChange) { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                }
             },
             onInsertBold = {
-                val newContent = "$content**bold text**"
-                onContentChange(newContent)
+                insertAtCursor(textFieldValue, "**bold text**", onContentChange) { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                }
             },
             onInsertItalic = {
-                val newContent = "$content*italic text*"
-                onContentChange(newContent)
+                insertAtCursor(textFieldValue, "*italic text*", onContentChange) { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                }
             },
             onInsertList = {
-                val newContent = "$content\n- "
-                onContentChange(newContent)
+                insertAtCursor(textFieldValue, "\n- ", onContentChange) { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                }
             },
             onInsertHeading = {
-                val newContent = "$content\n## Heading"
-                onContentChange(newContent)
+                insertAtCursor(textFieldValue, "\n## Heading", onContentChange) { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                }
             }
         )
 
@@ -70,8 +112,11 @@ fun MarkdownEditor(
                 .weight(1f)
         ) {
             BasicTextField(
-                value = content,
-                onValueChange = onContentChange,
+                value = textFieldValue,
+                onValueChange = { newTextFieldValue ->
+                    textFieldValue = newTextFieldValue
+                    onContentChange(newTextFieldValue.text)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -79,7 +124,7 @@ fun MarkdownEditor(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
                 decorationBox = { innerTextField ->
-                    if (content.isEmpty()) {
+                    if (textFieldValue.text.isEmpty()) {
                         Text(
                             "Add task details, checklists, notes...",
                             style = MaterialTheme.typography.bodyLarge,

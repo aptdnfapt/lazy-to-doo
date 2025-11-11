@@ -78,12 +78,23 @@ class TodoListViewModel @Inject constructor(
         _editingTodo.value = null
     }
 
-    fun addTodo(title: String, description: String?, categoryId: String = "work", status: TodoStatus = TodoStatus.TODO) {
+    fun addTodo(title: String, description: String?, categoryId: String, status: TodoStatus = TodoStatus.TODO) {
         viewModelScope.launch {
+            // Ensure the category exists, fallback to first available category or create work category
+            val validCategoryId = if (categories.value.any { it.id == categoryId }) {
+                categoryId
+            } else {
+                categories.value.firstOrNull()?.id ?: run {
+                    // Create work category if no categories exist
+                    categoryRepository.createCategory("Work", "Work", "#137fec", null)
+                    "work"
+                }
+            }
+
             repository.addTodo(
                 title = title,
                 description = description,
-                categoryId = categoryId,
+                categoryId = validCategoryId,
                 status = status
             )
             hideDialog()

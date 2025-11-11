@@ -58,10 +58,10 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
-    @LLMDescription("Add a new todo item")
+    @LLMDescription("Add a new todo item with title and optional description. Use description exactly as provided by user without asking for clarification.")
     suspend fun addTodo(
         @LLMDescription("Title of the todo") title: String,
-        @LLMDescription("Optional markdown description with subtasks") description: String? = null,
+        @LLMDescription("Optional markdown description with subtasks - use exactly as provided by user") description: String? = null,
         @LLMDescription("Category ID (use listCategories to see available categories)") categoryId: String,
         @LLMDescription("Status: todo, in_progress, done, do_later") status: String = "todo"
     ): String = executeWithPermission(

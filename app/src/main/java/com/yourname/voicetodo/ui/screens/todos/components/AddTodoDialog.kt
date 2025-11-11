@@ -35,19 +35,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yourname.voicetodo.domain.model.Todo
 import com.yourname.voicetodo.domain.model.TodoStatus
+import com.yourname.voicetodo.domain.model.Category
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTodoDialog(
     todo: Todo? = null,
+    categories: List<Category>,
     onDismiss: () -> Unit,
     onConfirm: (String, String?, String, TodoStatus) -> Unit
 ) {
     var title by remember(todo) { mutableStateOf(todo?.title ?: "") }
     var description by remember(todo) { mutableStateOf(todo?.description ?: "") }
-    var selectedCategoryId by remember(todo) { mutableStateOf(todo?.categoryId ?: "work") }
+    var selectedCategoryId by remember(todo) { mutableStateOf(todo?.categoryId ?: categories.firstOrNull()?.id ?: "work") }
     var selectedStatus by remember(todo) { mutableStateOf(todo?.status ?: TodoStatus.TODO) }
     var statusExpanded by remember { mutableStateOf(false) }
+    var categoryExpanded by remember { mutableStateOf(false) }
 
     val isEditing = todo != null
 
@@ -79,6 +82,41 @@ fun AddTodoDialog(
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
+
+                ExposedDropdownMenuBox(
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = categories.find { it.id == selectedCategoryId }?.displayName ?: "Select Category",
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Category") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        trailingIcon = {
+                            Icon(
+                                if (categoryExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                contentDescription = null
+                            )
+                        }
+                    )
+                    DropdownMenu(
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false }
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.displayName) },
+                                onClick = {
+                                    selectedCategoryId = category.id
+                                    categoryExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 ExposedDropdownMenuBox(
                     expanded = statusExpanded,

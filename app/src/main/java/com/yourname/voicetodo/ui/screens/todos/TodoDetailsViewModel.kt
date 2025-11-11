@@ -111,8 +111,10 @@ class TodoDetailsViewModel @Inject constructor(
                     line
                 }
             } else {
-                if (line.startsWith("- [x]") || line.startsWith("- [X]")) {
-                    line.replaceFirst("- [x]", "- [ ]").replaceFirst("- [X]", "- [ ]")
+                if (line.startsWith("- [x]")) {
+                    line.replaceFirst("- [x]", "- [ ]")
+                } else if (line.startsWith("- [X]")) {
+                    line.replaceFirst("- [X]", "- [ ]")
                 } else {
                     line
                 }
