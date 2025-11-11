@@ -15,13 +15,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import javax.inject.Singleton
 
 @Database(
-    entities = [TodoEntity::class, ChatSessionEntity::class, MessageEntity::class],
-    version = 3,
+    entities = [TodoEntity::class, CategoryEntity::class, ChatSessionEntity::class, MessageEntity::class],
+    version = 4,  // Bump version for category support
     exportSchema = false
 )
 @TypeConverters(TodoTypeConverters::class)
 abstract class TodoDatabase : RoomDatabase() {
     abstract fun todoDao(): TodoDao
+    abstract fun categoryDao(): CategoryDao
     abstract fun chatSessionDao(): ChatSessionDao
     abstract fun messageDao(): MessageDao
 }
@@ -37,12 +38,33 @@ object TodoDatabaseModule {
             context,
             TodoDatabase::class.java,
             "todo_database"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).fallbackToDestructiveMigration().build()
+        )
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .fallbackToDestructiveMigration()  // Alpha: Just recreate DB
+        .addCallback(object : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                // Insert default categories on first run
+                db.execSQL("""
+                    INSERT INTO categories (id, name, displayName, color, sortOrder, isDefault, createdAt)
+                    VALUES
+                        ('work', 'WORK', 'Work', '#137fec', 0, 1, ${System.currentTimeMillis()}),
+                        ('life', 'LIFE', 'Life', '#4caf50', 1, 1, ${System.currentTimeMillis()}),
+                        ('study', 'STUDY', 'Study', '#ff9800', 2, 1, ${System.currentTimeMillis()})
+                """)
+            }
+        })
+        .build()
     }
     
     @Provides
     fun provideTodoDao(database: TodoDatabase): TodoDao {
         return database.todoDao()
+    }
+
+    @Provides
+    fun provideCategoryDao(database: TodoDatabase): CategoryDao {
+        return database.categoryDao()
     }
 
     @Provides
@@ -99,5 +121,44 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         database.execSQL("ALTER TABLE messages ADD COLUMN toolArguments TEXT")
         database.execSQL("ALTER TABLE messages ADD COLUMN toolStatus TEXT")
         database.execSQL("ALTER TABLE messages ADD COLUMN toolResult TEXT")
+    }
+}
+
+// Migration from version 3 to 4 - Add categories and update todos
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Create categories table
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                displayName TEXT NOT NULL,
+                color TEXT NOT NULL DEFAULT '#137fec',
+                icon TEXT,
+                sortOrder INTEGER NOT NULL DEFAULT 0,
+                isDefault INTEGER NOT NULL DEFAULT 0,
+                createdAt INTEGER NOT NULL
+            )
+        """)
+
+        // Add new columns to todos table
+        database.execSQL("ALTER TABLE todos ADD COLUMN categoryId TEXT NOT NULL DEFAULT 'work'")
+        database.execSQL("ALTER TABLE todos ADD COLUMN subtasks TEXT")
+
+        // Rename section column to status
+        database.execSQL("ALTER TABLE todos RENAME COLUMN section TO status")
+
+        // Create index for categoryId
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_todos_categoryId ON todos(categoryId)")
+
+        // Insert default categories
+        val currentTime = System.currentTimeMillis()
+        database.execSQL("""
+            INSERT INTO categories (id, name, displayName, color, sortOrder, isDefault, createdAt)
+            VALUES
+                ('work', 'WORK', 'Work', '#137fec', 0, 1, $currentTime),
+                ('life', 'LIFE', 'Life', '#4caf50', 1, 1, $currentTime),
+                ('study', 'STUDY', 'Study', '#ff9800', 2, 1, $currentTime)
+        """)
     }
 }

@@ -19,14 +19,14 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
+
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +45,8 @@ import androidx.navigation.NavHostController
 import com.yourname.voicetodo.ui.screens.chat.components.MessageBubble
 import com.yourname.voicetodo.ui.screens.chat.components.MicButton
 import com.yourname.voicetodo.ui.screens.chat.components.ToolCallBubble
+import com.yourname.voicetodo.ui.screens.chat.components.CategoryDropdown
+import com.yourname.voicetodo.ui.screens.chat.components.ChatInputBar
 import com.yourname.voicetodo.domain.model.MessageType
 import com.yourname.voicetodo.domain.model.ToolCallStatus
 import kotlinx.serialization.json.Json
@@ -63,6 +65,8 @@ fun ChatScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val amplitude by viewModel.amplitude.collectAsState()
     val currentModel by viewModel.currentModel.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
 
 
 
@@ -97,19 +101,33 @@ fun ChatScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header
+        // Header with category dropdown
         Column(
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         ) {
-            Text(
-                text = "Voice Todo Assistant",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Using: $currentModel",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("AI Assistant", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    text = currentModel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Category selection dropdown
+            CategoryDropdown(
+                selectedCategoryId = selectedCategoryId,
+                categories = categories,
+                onCategorySelected = { viewModel.setSelectedCategory(it) },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
@@ -169,58 +187,26 @@ fun ChatScreen(
             }
         }
 
-        // Input area
-        Row(
+        // Input bar (redesigned)
+        ChatInputBar(
+            textInput = textInput,
+            onTextChange = { textInput = it },
+            onSendClick = { message ->
+                viewModel.sendTextMessage(message)
+                textInput = ""
+            },
+            onMicClick = {
+                if (isRecording) {
+                    viewModel.stopRecording()
+                } else {
+                    viewModel.startRecording()
+                }
+            },
+            isRecording = isRecording,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            // Text input
-            OutlinedTextField(
-                value = textInput,
-                onValueChange = { textInput = it },
-                placeholder = { Text("Type a message...") },
-                enabled = !isRecording && !isTranscribing && !isProcessing,
-                modifier = Modifier.weight(1f),
-                maxLines = 3,
-                shape = MaterialTheme.shapes.large
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Send button
-            IconButton(
-                onClick = {
-                    if (textInput.isNotBlank()) {
-                        viewModel.sendTextMessage(textInput)
-                        textInput = ""
-                    }
-                },
-                enabled = textInput.isNotBlank() && !isRecording && !isTranscribing && !isProcessing,
-                modifier = Modifier
-                    .size(48.dp)
-                    .padding(bottom = 4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Send,
-                    contentDescription = "Send message",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Microphone button
-            MicButton(
-                isRecording = isRecording,
-                isTranscribing = isTranscribing,
-                isProcessing = isProcessing,
-                amplitude = amplitude,
-                onRecordingStart = { viewModel.startRecording() },
-                onRecordingStop = { viewModel.stopRecording() }
-            )
-        }
+                .padding(top = 16.dp)
+        )
 
 
     }

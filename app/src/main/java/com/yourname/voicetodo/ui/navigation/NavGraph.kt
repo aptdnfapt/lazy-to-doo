@@ -14,6 +14,7 @@ import com.yourname.voicetodo.ui.screens.chat.ChatScreen
 import com.yourname.voicetodo.ui.screens.settings.SettingsScreen
 import com.yourname.voicetodo.ui.screens.settings.ToolPermissionsScreen
 import com.yourname.voicetodo.ui.screens.todos.TodoListScreen
+import com.yourname.voicetodo.ui.screens.todos.TodoDetailsScreen
 
 @Composable
 fun NavGraph(
@@ -38,7 +39,11 @@ fun NavGraph(
                 ChatScreen(sessionId = sessionId, navController = navController)
             }
             composable(Screen.Todos.route) {
-                TodoListScreen()
+                TodoListScreen(navController = navController)
+            }
+            composable(Screen.TodoDetails.route) { backStackEntry ->
+                val todoId = backStackEntry.arguments?.getString("todoId") ?: ""
+                TodoDetailsScreen(todoId = todoId, navController = navController)
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(

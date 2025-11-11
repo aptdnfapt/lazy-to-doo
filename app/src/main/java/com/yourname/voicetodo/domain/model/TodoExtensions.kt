@@ -7,9 +7,11 @@ fun TodoEntity.toDomainModel(): Todo {
         id = id,
         title = title,
         description = description.takeIf { it.isNotBlank() },
-        section = TodoSection.valueOf(section),
+        categoryId = categoryId,
+        status = TodoStatus.valueOf(status),
         createdAt = createdAt,
-        reminderTime = reminderTime
+        reminderTime = reminderTime,
+        subtasks = emptyList()  // TODO: Parse from JSON
     )
 }
 
@@ -18,9 +20,11 @@ fun Todo.toEntity(): TodoEntity {
         id = id,
         title = title,
         description = description ?: "",
-        section = section.name,
+        categoryId = categoryId,
+        status = status.name,
         createdAt = createdAt,
-        completedAt = if (section == TodoSection.DONE) System.currentTimeMillis() else null,
-        reminderTime = reminderTime
+        completedAt = if (status == TodoStatus.DONE) System.currentTimeMillis() else null,
+        reminderTime = reminderTime,
+        subtasks = null  // TODO: Serialize to JSON
     )
 }

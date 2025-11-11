@@ -9,6 +9,8 @@ import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
 import com.yourname.voicetodo.data.preferences.UserPreferences
+import com.yourname.voicetodo.data.repository.CategoryRepository
+import com.yourname.voicetodo.domain.model.Category
 import com.yourname.voicetodo.domain.model.Message
 import com.yourname.voicetodo.domain.model.MessageType
 import com.yourname.voicetodo.domain.model.ToolCallStatus
@@ -34,6 +36,7 @@ class ChatViewModel @Inject constructor(
     private val recorder: RecorderManager,
     private val userPreferences: UserPreferences,
     private val chatRepository: com.yourname.voicetodo.data.repository.ChatRepository,
+    private val categoryRepository: CategoryRepository,
     private val permissionManager: ToolPermissionManager
 ) : ViewModel() {
 
@@ -56,6 +59,13 @@ class ChatViewModel @Inject constructor(
 
     private val _amplitude = MutableStateFlow(0)
     val amplitude: StateFlow<Int> = _amplitude.asStateFlow()
+
+    // NEW: Category selection state
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
+
+    private val _selectedCategoryId = MutableStateFlow<String?>(null)  // null = "All"
+    val selectedCategoryId: StateFlow<String?> = _selectedCategoryId.asStateFlow()
 
     // Store pending permission request
     private var pendingPermissionRequest: ToolCallRequest? = null
@@ -92,6 +102,11 @@ class ChatViewModel @Inject constructor(
                 pendingPermissionRequest = request
                 addToolCallMessage(request.toolName, request.arguments, ToolCallStatus.PENDING_APPROVAL)
             }
+        }
+
+        // Load categories
+        viewModelScope.launch {
+            categoryRepository.getAllCategories().collect { _categories.value = it }
         }
     }
 
@@ -320,6 +335,10 @@ class ChatViewModel @Inject constructor(
             pendingPermissionRequest?.onResponse?.invoke(true)
             pendingPermissionRequest = null
         }
+    }
+
+    fun setSelectedCategory(categoryId: String?) {
+        _selectedCategoryId.value = categoryId
     }
 
     fun onToolCallDeny(messageId: String) {

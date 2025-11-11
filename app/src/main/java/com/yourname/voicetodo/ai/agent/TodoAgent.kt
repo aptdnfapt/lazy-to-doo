@@ -6,6 +6,7 @@ import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.ext.tool.AskUser
 import ai.koog.agents.core.tools.reflect.tools
 import com.yourname.voicetodo.ai.tools.TodoTools
+import com.yourname.voicetodo.ai.tools.CategoryTools
 import com.yourname.voicetodo.data.preferences.UserPreferences
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAIClientSettings
@@ -23,6 +24,7 @@ import javax.inject.Singleton
 @Singleton
 class TodoAgent @Inject constructor(
     private val todoTools: TodoTools,
+    private val categoryTools: CategoryTools,
     private val userPreferences: UserPreferences,
     private val permissionManager: ToolPermissionManager,
     private val retryableToolExecutor: RetryableToolExecutor
@@ -109,6 +111,7 @@ class TodoAgent @Inject constructor(
                 tool(SayToUser)
                 tool(AskUser)
                 tools(todoTools)
+                tools(categoryTools)
             },
             maxIterations = 20
         )

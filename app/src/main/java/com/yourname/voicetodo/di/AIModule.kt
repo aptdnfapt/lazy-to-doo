@@ -5,6 +5,7 @@ import com.yourname.voicetodo.ai.agent.TodoAgent
 import com.yourname.voicetodo.ai.execution.RetryableToolExecutor
 import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.ai.tools.TodoTools
+import com.yourname.voicetodo.ai.tools.CategoryTools
 import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
 import dagger.Module
@@ -58,12 +59,23 @@ object AIModule {
 
     @Provides
     @Singleton
+    fun provideCategoryTools(
+        categoryRepository: com.yourname.voicetodo.data.repository.CategoryRepository,
+        permissionManager: ToolPermissionManager,
+        retryableToolExecutor: RetryableToolExecutor
+    ): CategoryTools {
+        return CategoryTools(categoryRepository, permissionManager, retryableToolExecutor)
+    }
+
+    @Provides
+    @Singleton
     fun provideTodoAgent(
         todoTools: TodoTools,
+        categoryTools: CategoryTools,
         userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences,
         permissionManager: ToolPermissionManager,
         retryableToolExecutor: RetryableToolExecutor
     ): TodoAgent {
-        return TodoAgent(todoTools, userPreferences, permissionManager, retryableToolExecutor)
+        return TodoAgent(todoTools, categoryTools, userPreferences, permissionManager, retryableToolExecutor)
     }
 }

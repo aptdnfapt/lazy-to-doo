@@ -7,7 +7,7 @@ import com.yourname.voicetodo.ai.events.ToolExecutionEvents
 import com.yourname.voicetodo.ai.execution.RetryableToolExecutor
 import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.data.repository.TodoRepository
-import com.yourname.voicetodo.domain.model.TodoSection
+import com.yourname.voicetodo.domain.model.TodoStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
@@ -46,32 +46,45 @@ class TodoTools @Inject constructor(
     @LLMDescription("Add a new todo item")
     suspend fun addTodo(
         @LLMDescription("Title of the todo") title: String,
-        @LLMDescription("Optional description") description: String? = null,
-        @LLMDescription("Section to place the todo in (todo, in_progress, done, do_later)") section: String = "todo"
+        @LLMDescription("Optional markdown description with subtasks") description: String? = null,
+        @LLMDescription("Category ID (use listCategories to see available categories)") categoryId: String,
+        @LLMDescription("Status: todo, in_progress, done, do_later") status: String = "todo"
     ): String = executeWithPermission(
         toolName = "addTodo",
-        arguments = mapOf("title" to title, "description" to description, "section" to section)
+        arguments = mapOf("title" to title, "description" to description, "categoryId" to categoryId, "status" to status)
     ) {
-        // Original implementation with retry
         retryableToolExecutor.executeWithRetry(
             request = RetryableToolExecutor.ToolExecutionRequest(
                 toolName = "addTodo",
-                arguments = mapOf("title" to title, "description" to description, "section" to section),
+                arguments = mapOf("title" to title, "description" to description, "categoryId" to categoryId, "status" to status),
                 executeFunction = {
                     try {
-                        val todoSection = try {
-                            TodoSection.valueOf(section.uppercase().replace(" ", "_"))
+                        val todoStatus = try {
+                            TodoStatus.valueOf(status.uppercase().replace(" ", "_"))
                         } catch (e: IllegalArgumentException) {
-                            TodoSection.TODO
+                            TodoStatus.TODO
                         }
+
                         val todo = repository.addTodo(
                             title = title,
                             description = description,
-                            section = todoSection
+                            categoryId = categoryId,
+                            status = todoStatus
                         )
-                        "🔧 Tool Call: addTodo\n✅ Added todo: ${todo.title} in ${todoSection.name.replace("_", " ").lowercase()}"
+
+                        """
+                        Tool: addTodo
+                        Status: SUCCESS
+                        Result: Added todo "${todo.title}" to ${categoryId}
+                        Todo ID: ${todo.id}
+                        """.trimIndent()
                     } catch (e: Exception) {
-                        "🔧 Tool Call: addTodo\n❌ Failed: ${e.message}"
+                        """
+                        Tool: addTodo
+                        Status: FAILED
+                        Error: ${e.message}
+                        Suggestion: Verify categoryId exists using listCategories
+                        """.trimIndent()
                     }
                 }
             ),
@@ -142,30 +155,61 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
-    @LLMDescription("Edit todo description")
-    suspend fun editDescription(
+    @LLMDescription("Update todo content (description and subtasks)")
+    suspend fun updateTodoContent(
         @LLMDescription("Todo ID") todoId: String,
-        @LLMDescription("New description") description: String
+        @LLMDescription("New markdown content with description and subtasks") content: String
     ): String = executeWithPermission(
-        toolName = "editDescription",
-        arguments = mapOf("todoId" to todoId, "description" to description)
+        toolName = "updateTodoContent",
+        arguments = mapOf("todoId" to todoId, "content" to content)
     ) {
         retryableToolExecutor.executeWithRetry(
             request = RetryableToolExecutor.ToolExecutionRequest(
-                toolName = "editDescription",
-                arguments = mapOf("todoId" to todoId, "description" to description),
+                toolName = "updateTodoContent",
+                arguments = mapOf("todoId" to todoId, "content" to content),
                 executeFunction = {
                     try {
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
-                            val updatedTodo = todo.copy(description = description)
+                            val updatedTodo = todo.copy(description = content)
                             repository.updateTodo(updatedTodo)
-                            "🔧 Tool Call: editDescription\n✅ Updated todo description to: $description"
+                            "🔧 Tool Call: updateTodoContent\n✅ Updated todo content"
                         } else {
-                            "🔧 Tool Call: editDescription\n❌ Todo with ID $todoId not found"
+                            "🔧 Tool Call: updateTodoContent\n❌ Todo with ID $todoId not found"
                         }
                     } catch (e: Exception) {
-                        "🔧 Tool Call: editDescription\n❌ Failed: ${e.message}"
+                        "🔧 Tool Call: updateTodoContent\n❌ Failed: ${e.message}"
+                    }
+                }
+            ),
+            checkPermission = { true }
+        ).result ?: throw Exception("Tool execution failed")
+    }
+
+    @Tool
+    @LLMDescription("Move a todo to a different category")
+    suspend fun moveTodoToCategory(
+        @LLMDescription("Todo ID") todoId: String,
+        @LLMDescription("Target category ID") targetCategoryId: String
+    ): String = executeWithPermission(
+        toolName = "moveTodoToCategory",
+        arguments = mapOf("todoId" to todoId, "targetCategoryId" to targetCategoryId)
+    ) {
+        retryableToolExecutor.executeWithRetry(
+            request = RetryableToolExecutor.ToolExecutionRequest(
+                toolName = "moveTodoToCategory",
+                arguments = mapOf("todoId" to todoId, "targetCategoryId" to targetCategoryId),
+                executeFunction = {
+                    try {
+                        val todo = repository.getTodoById(todoId)
+                        if (todo != null) {
+                            repository.updateTodoCategory(todoId, targetCategoryId)
+                            "✅ Moved todo '${todo.title}' to category $targetCategoryId"
+                        } else {
+                            "❌ Todo with ID $todoId not found"
+                        }
+                    } catch (e: Exception) {
+                        "❌ Failed to move todo: ${e.message}"
                     }
                 }
             ),
@@ -189,7 +233,7 @@ class TodoTools @Inject constructor(
                     try {
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
-                            repository.updateTodoSection(todoId, TodoSection.DONE)
+                            repository.updateTodoStatus(todoId, TodoStatus.DONE)
                             "🔧 Tool Call: markComplete\n✅ Marked todo as complete: ${todo.title}"
                         } else {
                             "🔧 Tool Call: markComplete\n❌ Todo with ID $todoId not found"
@@ -219,7 +263,7 @@ class TodoTools @Inject constructor(
                     try {
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
-                            repository.updateTodoSection(todoId, TodoSection.IN_PROGRESS)
+                            repository.updateTodoStatus(todoId, TodoStatus.IN_PROGRESS)
                             "🔧 Tool Call: markInProgress\n🔄 Marked todo as in progress: ${todo.title}"
                         } else {
                             "🔧 Tool Call: markInProgress\n❌ Todo with ID $todoId not found"
@@ -249,40 +293,13 @@ class TodoTools @Inject constructor(
                     try {
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
-                            repository.updateTodoSection(todoId, TodoSection.DO_LATER)
+                            repository.updateTodoStatus(todoId, TodoStatus.DO_LATER)
                             "🔧 Tool Call: markDoLater\n⏰ Marked todo to do later: ${todo.title}"
                         } else {
                             "🔧 Tool Call: markDoLater\n❌ Todo with ID $todoId not found"
                         }
                     } catch (e: Exception) {
                         "🔧 Tool Call: markDoLater\n❌ Failed: ${e.message}"
-                    }
-                }
-            ),
-            checkPermission = { true }
-        ).result ?: throw Exception("Tool execution failed")
-    }
-
-    @Tool
-    @LLMDescription("Create new section")
-    suspend fun createSection(
-        @LLMDescription("Section name") name: String
-    ): String = executeWithPermission(
-        toolName = "createSection",
-        arguments = mapOf("name" to name)
-    ) {
-        retryableToolExecutor.executeWithRetry(
-            request = RetryableToolExecutor.ToolExecutionRequest(
-                toolName = "createSection",
-                arguments = mapOf("name" to name),
-                executeFunction = {
-                    try {
-                        // Note: TodoSection is an enum, so we can't create new sections dynamically
-                        // Available sections are: TODO, IN_PROGRESS, DONE, DO_LATER
-                        val availableSections = TodoSection.values().joinToString(", ") { it.name.lowercase().replace("_", " ") }
-                        "🔧 Tool Call: createSection\nℹ️ Available sections are: $availableSections. Please use one of these sections when adding or moving todos."
-                    } catch (e: Exception) {
-                        "🔧 Tool Call: createSection\n❌ Failed: ${e.message}"
                     }
                 }
             ),
@@ -349,48 +366,55 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
-    @LLMDescription("List all todos")
+    @LLMDescription("List todos with optional filtering")
     suspend fun listTodos(
-        @LLMDescription("Section to filter by (todo, in_progress, done, do_later, or 'all' for all todos)") section: String = "all"
+        @LLMDescription("Category ID to filter by, or 'all'") categoryId: String = "all",
+        @LLMDescription("Status to filter by: todo, in_progress, done, do_later, or 'all'") status: String = "all"
     ): String = executeWithPermission(
         toolName = "listTodos",
-        arguments = mapOf("section" to section)
+        arguments = mapOf("categoryId" to categoryId, "status" to status)
     ) {
         retryableToolExecutor.executeWithRetry(
             request = RetryableToolExecutor.ToolExecutionRequest(
                 toolName = "listTodos",
-                arguments = mapOf("section" to section),
+                arguments = mapOf("categoryId" to categoryId, "status" to status),
                 executeFunction = {
                     try {
-                        val todos = if (section.lowercase() == "all") {
-                            runBlocking { repository.getAllTodos().first() }
-                        } else {
-                            val todoSection = try {
-                                TodoSection.valueOf(section.uppercase().replace(" ", "_"))
-                            } catch (e: IllegalArgumentException) {
-                                return@ToolExecutionRequest "❌ Invalid section. Available sections: todo, in_progress, done, do_later, or 'all'"
+                        val todos = when {
+                            categoryId == "all" && status == "all" -> {
+                                runBlocking { repository.getAllTodos().first() }
                             }
-                            runBlocking { repository.getTodosBySection(todoSection).first() }
+                            categoryId == "all" -> {
+                                val todoStatus = TodoStatus.valueOf(status.uppercase().replace(" ", "_"))
+                                runBlocking { repository.getTodosByStatus(todoStatus).first() }
+                            }
+                            status == "all" -> {
+                                runBlocking { repository.getTodosByCategory(categoryId).first() }
+                            }
+                            else -> {
+                                val todoStatus = TodoStatus.valueOf(status.uppercase().replace(" ", "_"))
+                                runBlocking { repository.getTodosByCategoryAndStatus(categoryId, todoStatus).first() }
+                            }
                         }
 
                         if (todos.isEmpty()) {
-                            return@ToolExecutionRequest "🔧 Tool Call: listTodos\n📝 No todos found"
+                            return@ToolExecutionRequest "📝 No todos found"
                         }
 
                         val todoList = todos.joinToString("\n") { todo ->
-                            val status = when (todo.section) {
-                                TodoSection.TODO -> "📝"
-                                TodoSection.IN_PROGRESS -> "🔄"
-                                TodoSection.DONE -> "✅"
-                                TodoSection.DO_LATER -> "⏰"
+                            val statusIcon = when (todo.status) {
+                                TodoStatus.TODO -> "📝"
+                                TodoStatus.IN_PROGRESS -> "🔄"
+                                TodoStatus.DONE -> "✅"
+                                TodoStatus.DO_LATER -> "⏰"
                             }
-                            val desc = todo.description?.let { "\n   Description: \"$it\"" } ?: ""
-                            "$status ${todo.title} [${todo.id}]$desc"
+                            val desc = todo.description?.let { "\n   Description: \"${it.take(50)}...\"" } ?: ""
+                            "$statusIcon ${todo.title} [${todo.id}] (Category: ${todo.categoryId})$desc"
                         }
 
-                        "🔧 Tool Call: listTodos\n📋 Todos:\n$todoList"
+                        "📋 Todos:\n$todoList"
                     } catch (e: Exception) {
-                        "🔧 Tool Call: listTodos\n❌ Failed: ${e.message}"
+                        "❌ Failed to list todos: ${e.message}"
                     }
                 }
             ),

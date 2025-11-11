@@ -43,7 +43,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yourname.voicetodo.domain.model.Todo
-import com.yourname.voicetodo.domain.model.TodoSection
+import com.yourname.voicetodo.domain.model.TodoStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,7 +53,7 @@ fun TodoItem(
     todo: Todo,
     onEdit: (Todo) -> Unit,
     onDelete: (String) -> Unit,
-    onSectionChange: (TodoSection) -> Unit
+    onStatusChange: (TodoStatus) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sectionExpanded by remember { mutableStateOf(false) }
@@ -81,7 +81,7 @@ fun TodoItem(
                         text = todo.title,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        textDecoration = if (todo.section == TodoSection.DONE) 
+                        textDecoration = if (todo.status == TodoStatus.DONE) 
                             TextDecoration.LineThrough else null,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -113,28 +113,28 @@ fun TodoItem(
                             .size(40.dp)
                             .clip(RoundedCornerShape(20.dp))
                             .background(
-                                when (todo.section) {
-                                    TodoSection.DONE -> Color(0xFF4CAF50).copy(alpha = 0.2f)
-                                    TodoSection.IN_PROGRESS -> Color(0xFF2196F3).copy(alpha = 0.2f)
-                                    TodoSection.DO_LATER -> Color(0xFFFFA726).copy(alpha = 0.2f)
-                                    else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                }
+                                    when (todo.status) {
+                                        TodoStatus.DONE -> Color(0xFF4CAF50).copy(alpha = 0.2f)
+                                        TodoStatus.IN_PROGRESS -> Color(0xFF2196F3).copy(alpha = 0.2f)
+                                        TodoStatus.DO_LATER -> Color(0xFFFFA726).copy(alpha = 0.2f)
+                                        else -> Color(0xFF9E9E9E).copy(alpha = 0.2f)
+                                    }
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = when (todo.section) {
-                                TodoSection.DONE -> Icons.Default.CheckCircle
-                                TodoSection.IN_PROGRESS -> Icons.Default.PlayArrow
-                                TodoSection.DO_LATER -> Icons.Default.Add
+                            imageVector = when (todo.status) {
+                                TodoStatus.DONE -> Icons.Default.CheckCircle
+                                TodoStatus.IN_PROGRESS -> Icons.Default.PlayArrow
+                                TodoStatus.DO_LATER -> Icons.Default.Add
                                 else -> Icons.Default.PlayArrow
                             },
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
-                            tint = when (todo.section) {
-                                TodoSection.DONE -> Color(0xFF4CAF50)
-                                TodoSection.IN_PROGRESS -> Color(0xFF2196F3)
-                                TodoSection.DO_LATER -> Color(0xFFFFA726)
+                            tint = when (todo.status) {
+                                TodoStatus.DONE -> Color(0xFF4CAF50)
+                                TodoStatus.IN_PROGRESS -> Color(0xFF2196F3)
+                                TodoStatus.DO_LATER -> Color(0xFFFFA726)
                                 else -> MaterialTheme.colorScheme.primary
                             }
                         )

@@ -2,10 +2,13 @@ package com.yourname.voicetodo.data.repository
 
 import com.yourname.voicetodo.data.local.TodoDao
 import com.yourname.voicetodo.data.local.TodoEntity
+import com.yourname.voicetodo.domain.model.Subtask
 import com.yourname.voicetodo.domain.model.Todo
-import com.yourname.voicetodo.domain.model.TodoSection
+import com.yourname.voicetodo.domain.model.TodoStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,11 +24,17 @@ class TodoRepository @Inject constructor(
         }
     }
     
-    fun getTodosBySection(section: TodoSection): Flow<List<Todo>> {
-        return todoDao.getTodosBySection(section.name).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
-    }
+    // NEW methods
+    fun getTodosByCategory(categoryId: String): Flow<List<Todo>> =
+        todoDao.getTodosByCategory(categoryId).map { it.map { entity -> entity.toDomainModel() } }
+
+    fun getTodosByCategoryAndStatus(categoryId: String, status: TodoStatus): Flow<List<Todo>> =
+        todoDao.getTodosByCategoryAndStatus(categoryId, status.name)
+            .map { it.map { entity -> entity.toDomainModel() } }
+
+    // UPDATED: Rename from getTodosBySection
+    fun getTodosByStatus(status: TodoStatus): Flow<List<Todo>> =
+        todoDao.getTodosByStatus(status.name).map { it.map { entity -> entity.toDomainModel() } }
     
     suspend fun getTodoById(id: String): Todo? {
         return todoDao.getTodoById(id)?.toDomainModel()
@@ -35,17 +44,20 @@ class TodoRepository @Inject constructor(
         todoDao.insertTodo(todo.toEntity())
     }
     
+    // UPDATED: Add categoryId parameter
     suspend fun addTodo(
         title: String,
         description: String? = null,
-        section: TodoSection = TodoSection.TODO,
+        categoryId: String,
+        status: TodoStatus = TodoStatus.TODO,
         reminderTime: Long? = null
     ): Todo {
         val todo = Todo(
             id = UUID.randomUUID().toString(),
             title = title,
             description = description?.ifBlank { null },
-            section = section,
+            categoryId = categoryId,
+            status = status,
             reminderTime = reminderTime
         )
         insertTodo(todo)
@@ -64,8 +76,13 @@ class TodoRepository @Inject constructor(
         todoDao.deleteTodoById(id)
     }
     
-    suspend fun updateTodoSection(id: String, section: TodoSection) {
-        todoDao.updateTodoSection(id, section.name)
+    suspend fun updateTodoCategory(todoId: String, categoryId: String) {
+        todoDao.updateTodoCategory(todoId, categoryId)
+    }
+
+    // UPDATED: Rename from updateTodoSection
+    suspend fun updateTodoStatus(todoId: String, status: TodoStatus) {
+        todoDao.updateTodoStatus(todoId, status.name)
     }
     
     suspend fun updateTodoReminder(id: String, reminderTime: Long?) {
@@ -87,9 +104,11 @@ private fun TodoEntity.toDomainModel(): Todo {
         id = id,
         title = title,
         description = description,
-        section = TodoSection.valueOf(section),
+        categoryId = categoryId,
+        status = TodoStatus.valueOf(status),
         createdAt = createdAt,
-        reminderTime = reminderTime
+        reminderTime = reminderTime,
+        subtasks = subtasks?.let { Json.decodeFromString<List<Subtask>>(it) } ?: emptyList()
     )
 }
 
@@ -98,9 +117,11 @@ private fun Todo.toEntity(): TodoEntity {
         id = id,
         title = title,
         description = description ?: "",
-        section = section.name,
+        categoryId = categoryId,
+        status = status.name,
         createdAt = createdAt,
-        completedAt = if (section == TodoSection.DONE) System.currentTimeMillis() else null,
-        reminderTime = reminderTime
+        completedAt = if (status == TodoStatus.DONE) System.currentTimeMillis() else null,
+        reminderTime = reminderTime,
+        subtasks = if (subtasks.isNotEmpty()) Json.encodeToString(subtasks) else null
     )
 }

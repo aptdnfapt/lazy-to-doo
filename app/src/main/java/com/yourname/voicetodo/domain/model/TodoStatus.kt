@@ -1,6 +1,6 @@
 package com.yourname.voicetodo.domain.model
 
-enum class TodoSection {
+enum class TodoStatus {
     TODO,
     IN_PROGRESS,
     DONE,

@@ -14,8 +14,17 @@ interface TodoDao {
     @Query("SELECT * FROM todos ORDER BY createdAt DESC")
     fun getAllTodos(): Flow<List<TodoEntity>>
     
-    @Query("SELECT * FROM todos WHERE section = :section ORDER BY createdAt DESC")
-    fun getTodosBySection(section: String): Flow<List<TodoEntity>>
+    // NEW: Filter by category
+    @Query("SELECT * FROM todos WHERE categoryId = :categoryId ORDER BY createdAt DESC")
+    fun getTodosByCategory(categoryId: String): Flow<List<TodoEntity>>
+
+    // UPDATED: Rename from getTodosBySection
+    @Query("SELECT * FROM todos WHERE status = :status ORDER BY createdAt DESC")
+    fun getTodosByStatus(status: String): Flow<List<TodoEntity>>
+
+    // NEW: Filter by category AND status
+    @Query("SELECT * FROM todos WHERE categoryId = :categoryId AND status = :status ORDER BY createdAt DESC")
+    fun getTodosByCategoryAndStatus(categoryId: String, status: String): Flow<List<TodoEntity>>
     
     @Query("SELECT * FROM todos WHERE id = :id")
     suspend fun getTodoById(id: String): TodoEntity?
@@ -38,8 +47,13 @@ interface TodoDao {
     @Query("DELETE FROM todos")
     suspend fun deleteAllTodos()
     
-    @Query("UPDATE todos SET section = :newSection WHERE id = :id")
-    suspend fun updateTodoSection(id: String, newSection: String)
+    // NEW: Update category
+    @Query("UPDATE todos SET categoryId = :categoryId WHERE id = :id")
+    suspend fun updateTodoCategory(id: String, categoryId: String)
+
+    // UPDATED: Rename from updateTodoSection
+    @Query("UPDATE todos SET status = :status WHERE id = :id")
+    suspend fun updateTodoStatus(id: String, status: String)
     
     @Query("UPDATE todos SET reminderTime = :reminderTime WHERE id = :id")
     suspend fun updateTodoReminder(id: String, reminderTime: Long?)

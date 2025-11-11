@@ -6,6 +6,9 @@ sealed class Screen(val route: String) {
         fun createRoute(sessionId: String) = "chat/$sessionId"
     }
     object Todos : Screen("todos")
+    object TodoDetails : Screen("todo_details/{todoId}") {
+        fun createRoute(todoId: String) = "todo_details/$todoId"
+    }
     object Settings : Screen("settings")
     object ToolPermissions : Screen("tool_permissions")
 }

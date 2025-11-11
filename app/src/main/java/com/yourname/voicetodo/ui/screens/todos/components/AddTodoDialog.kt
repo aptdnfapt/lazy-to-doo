@@ -10,9 +10,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,19 +32,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yourname.voicetodo.domain.model.Todo
-import com.yourname.voicetodo.domain.model.TodoSection
+import com.yourname.voicetodo.domain.model.TodoStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTodoDialog(
     todo: Todo? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String?, TodoSection) -> Unit
+    onConfirm: (String, String?, String, TodoStatus) -> Unit
 ) {
     var title by remember(todo) { mutableStateOf(todo?.title ?: "") }
     var description by remember(todo) { mutableStateOf(todo?.description ?: "") }
-    var selectedSection by remember(todo) { mutableStateOf(todo?.section ?: TodoSection.TODO) }
-    var sectionExpanded by remember { mutableStateOf(false) }
+    var selectedCategoryId by remember(todo) { mutableStateOf(todo?.categoryId ?: "work") }
+    var selectedStatus by remember(todo) { mutableStateOf(todo?.status ?: TodoStatus.TODO) }
+    var statusExpanded by remember { mutableStateOf(false) }
 
     val isEditing = todo != null
 
@@ -74,29 +79,34 @@ fun AddTodoDialog(
                 )
 
                 ExposedDropdownMenuBox(
-                    expanded = sectionExpanded,
-                    onExpandedChange = { sectionExpanded = !sectionExpanded }
+                    expanded = statusExpanded,
+                    onExpandedChange = { statusExpanded = !statusExpanded }
                 ) {
                     OutlinedTextField(
-                        value = getSectionDisplayName(selectedSection),
+                        value = getStatusDisplayNameForDialog(selectedStatus),
                         onValueChange = { },
                         readOnly = true,
-                        label = { Text("Section") },
+                        label = { Text("Status") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sectionExpanded) }
+                        trailingIcon = {
+                            Icon(
+                                if (statusExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                contentDescription = null
+                            )
+                        }
                     )
                     DropdownMenu(
-                        expanded = sectionExpanded,
-                        onDismissRequest = { sectionExpanded = false }
+                        expanded = statusExpanded,
+                        onDismissRequest = { statusExpanded = false }
                     ) {
-                        TodoSection.values().forEach { section ->
+                        TodoStatus.values().forEach { status ->
                             DropdownMenuItem(
-                                text = { Text(getSectionDisplayName(section)) },
+                                text = { Text(getStatusDisplayNameForDialog(status)) },
                                 onClick = {
-                                    selectedSection = section
-                                    sectionExpanded = false
+                                    selectedStatus = status
+                                    statusExpanded = false
                                 }
                             )
                         }
@@ -108,7 +118,7 @@ fun AddTodoDialog(
             Button(
                 onClick = {
                     if (title.isNotBlank()) {
-                        onConfirm(title, description.ifBlank { null }, selectedSection)
+                        onConfirm(title, description.ifBlank { null }, selectedCategoryId, selectedStatus)
                     }
                 },
                 enabled = title.isNotBlank()
@@ -125,11 +135,11 @@ fun AddTodoDialog(
     )
 }
 
-private fun getSectionDisplayName(section: TodoSection): String {
-    return when (section) {
-        TodoSection.TODO -> "To Do"
-        TodoSection.IN_PROGRESS -> "In Progress"
-        TodoSection.DONE -> "Done"
-        TodoSection.DO_LATER -> "Do Later"
+private fun getStatusDisplayNameForDialog(status: TodoStatus): String {
+    return when (status) {
+        TodoStatus.TODO -> "To Do"
+        TodoStatus.IN_PROGRESS -> "In Progress"
+        TodoStatus.DONE -> "Done"
+        TodoStatus.DO_LATER -> "Do Later"
     }
 }
