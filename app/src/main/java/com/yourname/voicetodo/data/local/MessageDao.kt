@@ -33,4 +33,10 @@ interface MessageDao {
 
     @Query("UPDATE messages SET toolStatus = :status, toolResult = :result WHERE id = :messageId")
     suspend fun updateToolCallMessageStatus(messageId: String, status: String, result: String?)
+
+    @Query("""
+        SELECT DISTINCT sessionId FROM messages
+        WHERE content LIKE '%' || :query || '%'
+    """)
+    suspend fun getSessionIdsWithMessageContent(query: String): List<String>
 }

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 
 object PreferencesKeys {
     // LLM Provider Settings
+    val LLM_PROVIDER = stringPreferencesKey("llm_provider")
     val LLM_BASE_URL = stringPreferencesKey("llm_base_url")
     val LLM_API_KEY = stringPreferencesKey("llm_api_key")
     val LLM_MODEL_NAME = stringPreferencesKey("llm_model_name")

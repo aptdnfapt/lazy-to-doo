@@ -28,16 +28,31 @@ class CategoryTools @Inject constructor(
     ): T {
         // Check if always allowed
         if (permissionManager.isToolAlwaysAllowed(toolName)) {
-            return block()
+            try {
+                val result = block()
+                ToolExecutionEvents.notifyCompletion(toolName, arguments, true, result.toString())
+                return result
+            } catch (e: Exception) {
+                ToolExecutionEvents.notifyCompletion(toolName, arguments, false, null, e.message)
+                throw e
+            }
         }
 
         // Request permission
         val granted = ToolExecutionEvents.requestPermission(toolName, arguments)
         if (!granted) {
+            ToolExecutionEvents.notifyCompletion(toolName, arguments, false, null, "Permission denied")
             throw SecurityException("Permission denied for tool: $toolName")
         }
 
-        return block()
+        try {
+            val result = block()
+            ToolExecutionEvents.notifyCompletion(toolName, arguments, true, result.toString())
+            return result
+        } catch (e: Exception) {
+            ToolExecutionEvents.notifyCompletion(toolName, arguments, false, null, e.message)
+            throw e
+        }
     }
 
     @Tool

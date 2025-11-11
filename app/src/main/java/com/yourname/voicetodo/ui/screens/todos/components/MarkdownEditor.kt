@@ -114,17 +114,17 @@ fun MarkdownToolbar(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ToolbarButton(icon = Icons.Filled.Check, tooltip = "Checkbox", onClick = onInsertCheckbox)
-            ToolbarButton(icon = Icons.Filled.Star, tooltip = "Bold", onClick = onInsertBold)
-            ToolbarButton(icon = Icons.Filled.Info, tooltip = "Italic", onClick = onInsertItalic)
-            ToolbarButton(icon = Icons.Filled.List, tooltip = "List", onClick = onInsertList)
-            ToolbarButton(icon = Icons.Filled.TextFields, tooltip = "Heading", onClick = onInsertHeading)
+            ToolbarOutlinedButton(icon = Icons.Filled.Check, tooltip = "Checkbox", onClick = onInsertCheckbox)
+            ToolbarOutlinedButton(icon = Icons.Filled.Star, tooltip = "Bold", onClick = onInsertBold)
+            ToolbarOutlinedButton(icon = Icons.Filled.Info, tooltip = "Italic", onClick = onInsertItalic)
+            ToolbarOutlinedButton(icon = Icons.Filled.List, tooltip = "List", onClick = onInsertList)
+            ToolbarOutlinedButton(icon = Icons.Filled.TextFields, tooltip = "Heading", onClick = onInsertHeading)
         }
     }
 }
 
 @Composable
-fun ToolbarButton(
+fun ToolbarOutlinedButton(
     icon: ImageVector,
     tooltip: String,
     onClick: () -> Unit

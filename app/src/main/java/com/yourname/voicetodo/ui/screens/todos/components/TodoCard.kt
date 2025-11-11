@@ -1,6 +1,7 @@
 package com.yourname.voicetodo.ui.screens.todos.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +20,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -47,7 +51,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun TodoCard(
+fun TodoOutlinedCard(
     todo: Todo,
     categories: List<Category>,
     onClick: () -> Unit,
@@ -63,6 +67,7 @@ fun TodoCard(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 2.dp)
@@ -139,7 +144,7 @@ fun TodoCard(
                         .filter { it != todo.status }
                         .forEach { status ->
                             DropdownMenuItem(
-                                text = { Text(getStatusDisplayNameForCard(status)) },
+                                text = { Text(getStatusDisplayNameForOutlinedCard(status)) },
                                 onClick = {
                                     onMoveToStatus(status)
                                     showMenu = false
@@ -207,13 +212,13 @@ fun TodoCard(
                 title = { Text("Delete Todo?") },
                 text = { Text("Are you sure you want to delete \"${todo.title}\"? This action cannot be undone.") },
                 confirmButton = {
-                    Button(
+                    OutlinedButton(
                         onClick = {
                             onDelete()
                             showDeleteDialog = false
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
                         Text("Delete")
@@ -243,7 +248,7 @@ private fun getPriorityColor(status: TodoStatus): Color {
     }
 }
 
-private fun getStatusDisplayNameForCard(status: com.yourname.voicetodo.domain.model.TodoStatus): String {
+private fun getStatusDisplayNameForOutlinedCard(status: com.yourname.voicetodo.domain.model.TodoStatus): String {
     return when (status) {
         com.yourname.voicetodo.domain.model.TodoStatus.TODO -> "To Do"
         com.yourname.voicetodo.domain.model.TodoStatus.IN_PROGRESS -> "In Progress"

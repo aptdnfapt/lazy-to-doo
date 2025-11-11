@@ -36,11 +36,7 @@ class CategoryRepository @Inject constructor(
     }
 
     suspend fun deleteCategory(id: String) {
-        if (categoryDao.getCategoryById(id)?.isDefault == false) {
-            categoryDao.deleteCategoryById(id)
-        } else {
-            throw IllegalArgumentException("Cannot delete default category")
-        }
+        categoryDao.deleteCategoryById(id)
     }
 }
 

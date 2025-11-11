@@ -75,7 +75,11 @@ class TodoRepository @Inject constructor(
     suspend fun deleteTodoById(id: String) {
         todoDao.deleteTodoById(id)
     }
-    
+
+    suspend fun deleteTodosByCategory(categoryId: String) {
+        todoDao.deleteTodosByCategory(categoryId)
+    }
+
     suspend fun updateTodoCategory(todoId: String, categoryId: String) {
         todoDao.updateTodoCategory(todoId, categoryId)
     }

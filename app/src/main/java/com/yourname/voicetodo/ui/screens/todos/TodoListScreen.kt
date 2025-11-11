@@ -67,7 +67,7 @@ fun TodoListScreen(
                     onExpandedChange = { viewModel.toggleFabExpanded() },
                     onNewTodoClick = { viewModel.showNewTodoDialog() },
                     onNewCategoryClick = { viewModel.showNewCategoryDialog() },
-                    onNewChatClick = { navController.navigate("chat/new") }
+                    onNewChatClick = { viewModel.createNewChatSession(navController) }
                 )
             }
         ) { padding ->
@@ -126,8 +126,8 @@ fun TodoListScreen(
         if (showCategoryDialog) {
             NewCategoryDialog(
                 onDismiss = { viewModel.hideCategoryDialog() },
-                onConfirm = { name, displayName, color, icon ->
-                    viewModel.createCategory(name, displayName, color, icon)
+                onConfirm = { name, color ->
+                    viewModel.createCategory(name, color)
                 }
             )
         }

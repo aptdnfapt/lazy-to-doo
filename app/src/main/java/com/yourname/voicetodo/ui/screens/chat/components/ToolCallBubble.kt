@@ -38,7 +38,7 @@ fun ToolCallBubble(
         else -> Color(0xFFFFA726)
     }
 
-    Card(
+    OutlinedCard(
         modifier = modifier
             .fillMaxWidth(0.85f),
         colors = CardDefaults.cardColors(
@@ -156,7 +156,7 @@ fun ToolCallBubble(
                     TextButton(onClick = onApproveOnce) {
                         Text("Allow Once")
                     }
-                    Button(onClick = onApproveAlways) {
+                    OutlinedButton(onClick = onApproveAlways) {
                         Text("Always Allow")
                     }
                 }

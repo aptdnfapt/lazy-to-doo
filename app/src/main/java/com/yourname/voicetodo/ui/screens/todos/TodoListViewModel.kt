@@ -2,11 +2,14 @@ package com.yourname.voicetodo.ui.screens.todos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import com.yourname.voicetodo.data.repository.TodoRepository
 import com.yourname.voicetodo.data.repository.CategoryRepository
+import com.yourname.voicetodo.data.repository.ChatRepository
 import com.yourname.voicetodo.domain.model.Todo
 import com.yourname.voicetodo.domain.model.TodoStatus
 import com.yourname.voicetodo.domain.model.Category
+import com.yourname.voicetodo.ui.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TodoListViewModel @Inject constructor(
     private val repository: TodoRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     val todos = repository.getAllTodos()
@@ -147,16 +151,37 @@ class TodoListViewModel @Inject constructor(
         _showCategoryDialog.value = false
     }
 
-    fun createCategory(name: String, displayName: String, color: String, icon: String?) {
+    fun createCategory(name: String, color: String) {
         viewModelScope.launch {
-            categoryRepository.createCategory(name, displayName, color, icon)
+            categoryRepository.createCategory(name, name, color, null)
             hideCategoryDialog()
         }
     }
 
     fun deleteCategory(categoryId: String) {
         viewModelScope.launch {
+            // First delete all todos in the category
+            repository.deleteTodosByCategory(categoryId)
+            // Then delete the category
             categoryRepository.deleteCategory(categoryId)
+        }
+    }
+
+    fun createNewChatSession(navController: NavHostController) {
+        viewModelScope.launch {
+            try {
+                val newSession = chatRepository.createChatSession("New Chat")
+                navController.navigate(Screen.Chat.createRoute(newSession.id)) {
+                    popUpTo(navController.graph.startDestinationRoute ?: Screen.ChatList.route) {
+                        inclusive = false
+                    }
+                    launchSingleTop = true
+                }
+            } catch (e: Exception) {
+                // Handle error - could show toast or snackbar
+                // For now, just log the error
+                e.printStackTrace()
+            }
         }
     }
 }

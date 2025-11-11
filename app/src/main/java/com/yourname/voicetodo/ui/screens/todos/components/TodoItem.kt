@@ -22,8 +22,13 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +63,7 @@ fun TodoItem(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var sectionExpanded by remember { mutableStateOf(false) }
     
-    Card(
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onEdit(todo) }
@@ -162,7 +167,7 @@ fun TodoItem(
             title = { Text("Delete Todo") },
             text = { Text("Are you sure you want to delete this todo?") },
             confirmButton = {
-                Button(
+                OutlinedButton(
                     onClick = {
                         onDelete(todo.id)
                         showDeleteDialog = false

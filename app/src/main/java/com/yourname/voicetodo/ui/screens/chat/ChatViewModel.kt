@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.yourname.voicetodo.ai.agent.TodoAgent
 import com.yourname.voicetodo.ai.events.ToolExecutionEvents
 import com.yourname.voicetodo.ai.events.ToolExecutionEvents.ToolCallRequest
+import com.yourname.voicetodo.ai.events.ToolExecutionEvents.ToolCallCompletion
 import com.yourname.voicetodo.ai.permission.ToolPermissionManager
 import com.yourname.voicetodo.ai.transcription.RecorderManager
 import com.yourname.voicetodo.ai.transcription.WhisperTranscriber
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -104,9 +106,24 @@ class ChatViewModel @Inject constructor(
             }
         }
 
+        // Listen for tool completion events
+        viewModelScope.launch {
+            ToolExecutionEvents.completions.collect { completion ->
+                updateToolCallMessageOnCompletion(completion)
+            }
+        }
+
         // Load categories
         viewModelScope.launch {
             categoryRepository.getAllCategories().collect { _categories.value = it }
+        }
+        
+        // Set up timeout for stuck tool executions
+        viewModelScope.launch {
+            while (true) {
+                delay(30_000) // Check every 30 seconds
+                checkForStuckToolExecutions()
+            }
         }
     }
 
@@ -194,7 +211,12 @@ class ChatViewModel @Inject constructor(
             val transcribedText = transcriber.transcribe(audioFile, geminiApiKey)
             
             if (transcribedText.isNotBlank()) {
+                val isFirstUserMessage = _messages.value.none { it.isFromUser }
                 addMessage(transcribedText, isFromUser = true)
+                if (isFirstUserMessage) {
+                    val title = transcribedText.take(50)
+                    chatRepository.updateChatSessionTitle(currentSessionId, title)
+                }
                 processWithAgent(transcribedText)
             } else {
                 _errorMessage.value = "No speech detected. Please try again."
@@ -254,7 +276,12 @@ class ChatViewModel @Inject constructor(
         if (text.isBlank()) return
 
         viewModelScope.launch {
+            val isFirstUserMessage = _messages.value.none { it.isFromUser }
             addMessage(text, isFromUser = true)
+            if (isFirstUserMessage) {
+                val title = text.take(50)
+                chatRepository.updateChatSessionTitle(currentSessionId, title)
+            }
             processWithAgent(text)
         }
     }
@@ -317,6 +344,96 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    // Update tool call message on completion
+    private suspend fun updateToolCallMessageOnCompletion(completion: ToolCallCompletion) {
+        try {
+            // Find the tool call message that matches this completion
+            val messages = _messages.value
+            
+            // Try multiple matching strategies to find the correct tool call message
+            var toolCallMessage = findToolCallMessageByExactMatch(messages, completion)
+            
+            // Fallback: try matching by tool name and status only if exact match fails
+            if (toolCallMessage == null) {
+                toolCallMessage = findToolCallMessageByToolName(messages, completion)
+            }
+            
+            // Fallback: try matching by most recent executing tool with same name
+            if (toolCallMessage == null) {
+                toolCallMessage = findMostRecentExecutingTool(messages, completion.toolName)
+            }
+
+            if (toolCallMessage != null) {
+                val status = if (completion.success) ToolCallStatus.SUCCESS else ToolCallStatus.FAILED
+                val result = completion.result ?: completion.error
+                updateToolCallMessageStatus(toolCallMessage.id, status, result)
+            } else {
+                // Log warning for debugging purposes
+                android.util.Log.w("ChatViewModel", 
+                    "No matching tool call message found for completion: ${completion.toolName}")
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Failed to update tool call on completion: ${e.message}"
+            android.util.Log.e("ChatViewModel", "Error updating tool call completion", e)
+        }
+    }
+    
+    // Strategy 1: Exact match (original logic)
+    private fun findToolCallMessageByExactMatch(
+        messages: List<Message>, 
+        completion: ToolCallCompletion
+    ): Message? {
+        val completionArgsJson = Json.encodeToString(completion.arguments.mapValues { it.value?.toString() ?: "null" })
+        
+        return messages.find { message ->
+            message.messageType == MessageType.TOOL_CALL &&
+            message.toolName == completion.toolName &&
+            message.toolArguments == completionArgsJson &&
+            message.toolStatus == ToolCallStatus.EXECUTING.name
+        }
+    }
+    
+    // Strategy 2: Match by tool name and compare arguments as maps (more flexible)
+    private fun findToolCallMessageByToolName(
+        messages: List<Message>, 
+        completion: ToolCallCompletion
+    ): Message? {
+        val completionArgs = completion.arguments.mapValues { it.value?.toString() ?: "null" }
+        
+        return messages.find { message ->
+            message.messageType == MessageType.TOOL_CALL &&
+            message.toolName == completion.toolName &&
+            message.toolStatus == ToolCallStatus.EXECUTING.name &&
+            argumentsMatch(message.toolArguments, completionArgs)
+        }
+    }
+    
+    // Strategy 3: Match most recent executing tool with same name (last resort)
+    private fun findMostRecentExecutingTool(
+        messages: List<Message>, 
+        toolName: String
+    ): Message? {
+        return messages
+            .filter { message ->
+                message.messageType == MessageType.TOOL_CALL &&
+                message.toolName == toolName &&
+                message.toolStatus == ToolCallStatus.EXECUTING.name
+            }
+            .maxByOrNull { it.timestamp }
+    }
+    
+    // Helper function to compare arguments more flexibly
+    private fun argumentsMatch(storedArgsJson: String?, completionArgs: Map<String, String>): Boolean {
+        if (storedArgsJson == null) return completionArgs.isEmpty()
+        
+        return try {
+            val storedArgs = Json.decodeFromString<Map<String, String>>(storedArgsJson)
+            storedArgs == completionArgs
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // Handle inline tool call approvals
     fun onToolCallApproveOnce(messageId: String) {
         viewModelScope.launch {
@@ -356,6 +473,34 @@ class ChatViewModel @Inject constructor(
                 content = "⛔ Tool execution denied. The agent has stopped processing. Please provide more details or rephrase your request to continue.",
                 isFromUser = false
             )
+        }
+    }
+
+    // Check for tools stuck in EXECUTING status and mark them as FAILED
+    private fun checkForStuckToolExecutions() {
+        viewModelScope.launch {
+            try {
+                val currentTime = System.currentTimeMillis()
+                val timeoutThreshold = 5 * 60 * 1000L // 5 minutes
+                
+                val stuckMessages = _messages.value.filter { message ->
+                    message.messageType == MessageType.TOOL_CALL &&
+                    message.toolStatus == ToolCallStatus.EXECUTING.name &&
+                    (currentTime - message.timestamp) > timeoutThreshold
+                }
+                
+                stuckMessages.forEach { message ->
+                    updateToolCallMessageStatus(
+                        messageId = message.id,
+                        status = ToolCallStatus.FAILED,
+                        result = "Tool execution timed out after 5 minutes"
+                    )
+                    android.util.Log.w("ChatViewModel", 
+                        "Marked stuck tool execution as FAILED: ${message.toolName}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Error checking stuck tool executions", e)
+            }
         }
     }
 

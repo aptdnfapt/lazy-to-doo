@@ -43,6 +43,6 @@ data class CategoryWithCount(
     @Delete
     suspend fun deleteCategory(category: CategoryEntity)
 
-    @Query("DELETE FROM categories WHERE id = :id AND isDefault = 0")
+    @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deleteCategoryById(id: String)
 }

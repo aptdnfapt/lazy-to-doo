@@ -12,8 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -56,7 +59,7 @@ fun ToolPermissionDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Tool name
-                Card(
+                OutlinedCard(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
@@ -79,7 +82,7 @@ fun ToolPermissionDialog(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Card(
+                    OutlinedCard(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -111,7 +114,7 @@ fun ToolPermissionDialog(
                 TextButton(onClick = onAllowOnce) {
                     Text("Allow Once")
                 }
-                Button(onClick = onAlwaysAllow) {
+                OutlinedButton(onClick = onAlwaysAllow) {
                     Text("Always Allow")
                 }
             }

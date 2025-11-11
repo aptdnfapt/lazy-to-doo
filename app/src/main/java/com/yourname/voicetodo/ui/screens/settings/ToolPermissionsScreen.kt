@@ -45,7 +45,7 @@ fun ToolPermissionsScreen(
                 .padding(padding)
         ) {
             // Header info
-            Card(
+            OutlinedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -76,7 +76,7 @@ fun ToolPermissionsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(toolPermissions) { tool ->
-                    ToolPermissionCard(
+                    ToolPermissionOutlinedCard(
                         tool = tool,
                         onToggle = { viewModel.toggleToolPermission(tool.toolName) }
                     )
@@ -103,11 +103,11 @@ private fun getToolIcon(toolName: String): ImageVector {
 }
 
 @Composable
-fun ToolPermissionCard(
+fun ToolPermissionOutlinedCard(
     tool: ToolPermissionItem,
     onToggle: () -> Unit
 ) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -164,8 +164,10 @@ fun ToolPermissionCard(
                 checked = tool.isAllowed,
                 onCheckedChange = { onToggle() },
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
         }

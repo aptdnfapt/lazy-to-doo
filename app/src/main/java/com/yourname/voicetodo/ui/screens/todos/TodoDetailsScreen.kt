@@ -15,12 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -140,7 +141,7 @@ fun TodoDetailsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Filled.AutoAwesome,
+                    Icons.Filled.Add,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -168,7 +169,7 @@ fun TodoDetailsScreen(
                 MarkdownRenderer(
                     content = markdownContent,
                     onCheckboxToggle = { index, checked ->
-                        viewModel.toggleSubtask(index, checked)
+                        viewModel.toggleCheckboxInMarkdown(index, checked)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,7 +180,7 @@ fun TodoDetailsScreen(
             }
 
             // Edit/Save button
-            Button(
+            OutlinedButton(
                 onClick = {
                     if (isEditing) viewModel.saveMarkdown() else viewModel.startEditing()
                 },
@@ -206,7 +207,7 @@ fun TodoDetailsScreen(
                     )
                 },
                 confirmButton = {
-                    Button(
+                    OutlinedButton(
                         onClick = {
                             viewModel.updateTitle(titleText)
                             showEditTitleDialog = false

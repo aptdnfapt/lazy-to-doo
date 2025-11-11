@@ -53,7 +53,7 @@ fun MarkdownRenderer(
                             onCheckedChange = { onCheckboxToggle(index, it) }
                         )
                         Text(
-                            text = line.text,
+                            text = line.annotatedText,
                             style = MaterialTheme.typography.bodyLarge,
                             textDecoration = if (line.checked) TextDecoration.LineThrough else null,
                             modifier = Modifier.padding(start = 8.dp)
@@ -62,13 +62,13 @@ fun MarkdownRenderer(
                 }
                 is MarkdownLine.ListItem -> {
                     Row {
-                        Text("• ", style = MaterialTheme.typography.bodyLarge)
-                        Text(line.text, style = MaterialTheme.typography.bodyLarge)
+                        Text("● ", style = MaterialTheme.typography.bodyLarge)
+                        Text(line.annotatedText, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
                 is MarkdownLine.Plain -> {
                     Text(
-                        text = line.text,
+                        text = line.annotatedText,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -80,9 +80,43 @@ fun MarkdownRenderer(
 // Markdown parsing utility
 sealed class MarkdownLine {
     data class Heading(val level: Int, val text: String) : MarkdownLine()
-    data class Checkbox(val checked: Boolean, val text: String) : MarkdownLine()
-    data class ListItem(val text: String) : MarkdownLine()
-    data class Plain(val text: String) : MarkdownLine()
+    data class Checkbox(val checked: Boolean, val annotatedText: AnnotatedString) : MarkdownLine()
+    data class ListItem(val annotatedText: AnnotatedString) : MarkdownLine()
+    data class Plain(val annotatedText: AnnotatedString) : MarkdownLine()
+}
+
+fun parseInlineMarkdown(text: String): AnnotatedString {
+    return buildAnnotatedString {
+        var i = 0
+        while (i < text.length) {
+            if (text.startsWith("**", i)) {
+                val end = text.indexOf("**", i + 2)
+                if (end != -1) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(text.substring(i + 2, end))
+                    }
+                    i = end + 2
+                } else {
+                    append(text[i])
+                    i++
+                }
+            } else if (text.startsWith("*", i)) {
+                val end = text.indexOf("*", i + 1)
+                if (end != -1) {
+                    withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                        append(text.substring(i + 1, end))
+                    }
+                    i = end + 1
+                } else {
+                    append(text[i])
+                    i++
+                }
+            } else {
+                append(text[i])
+                i++
+            }
+        }
+    }
 }
 
 fun parseMarkdown(content: String): List<MarkdownLine> {
@@ -91,11 +125,11 @@ fun parseMarkdown(content: String): List<MarkdownLine> {
             line.startsWith("# ") -> MarkdownLine.Heading(1, line.removePrefix("# "))
             line.startsWith("## ") -> MarkdownLine.Heading(2, line.removePrefix("## "))
             line.startsWith("### ") -> MarkdownLine.Heading(3, line.removePrefix("### "))
-            line.trim().startsWith("- [ ]") -> MarkdownLine.Checkbox(false, line.trim().removePrefix("- [ ]").trim())
+            line.trim().startsWith("- [ ]") -> MarkdownLine.Checkbox(false, parseInlineMarkdown(line.trim().removePrefix("- [ ]").trim()))
             line.trim().startsWith("- [x]") || line.trim().startsWith("- [X]") ->
-                MarkdownLine.Checkbox(true, line.trim().removePrefix("- [x]").removePrefix("- [X]").trim())
-            line.trim().startsWith("- ") -> MarkdownLine.ListItem(line.trim().removePrefix("- "))
-            line.isNotBlank() -> MarkdownLine.Plain(line)
+                MarkdownLine.Checkbox(true, parseInlineMarkdown(line.trim().removePrefix("- [x]").removePrefix("- [X]").trim()))
+            line.trim().startsWith("- ") -> MarkdownLine.ListItem(parseInlineMarkdown(line.trim().removePrefix("- ")))
+            line.isNotBlank() -> MarkdownLine.Plain(parseInlineMarkdown(line))
             else -> null
         }
     }

@@ -2,7 +2,6 @@ package com.yourname.voicetodo.ui.screens.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,19 +17,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SmartToy
-import androidx.compose.material3.Card
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,21 +67,26 @@ fun ChatListScreen(
     navController: NavHostController,
     viewModel: ChatListViewModel = hiltViewModel()
 ) {
-    val chatSessions by viewModel.chatSessions.collectAsState(initial = emptyList())
+    val filteredSessions by viewModel.filteredSessions.collectAsState(initial = emptyList())
     var searchQuery by remember { mutableStateOf("") }
 
-    val filteredSessions = chatSessions.filter { it.title.contains(searchQuery, ignoreCase = true) }
+    LaunchedEffect(searchQuery) {
+        viewModel.searchQuery.value = searchQuery
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 title = { Text("Chat History") }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.createNewChatSession(navController) },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "New Chat")
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -118,6 +134,12 @@ fun ChatListScreen(
                                 session = session,
                                 onClick = {
                                     navController.navigate(Screen.Chat.createRoute(session.id))
+                                },
+                                onEditTitle = { newTitle ->
+                                    viewModel.updateChatSessionTitle(session.id, newTitle)
+                                },
+                                onDelete = {
+                                    viewModel.deleteChatSession(session.id)
                                 }
                             )
                         }
@@ -129,11 +151,18 @@ fun ChatListScreen(
 }
 
 @Composable
-private fun ChatSessionItem(
+fun ChatSessionItem(
     session: ChatSession,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEditTitle: (String) -> Unit,
+    onDelete: () -> Unit
 ) {
-    Card(
+    var menuExpanded by remember { mutableStateOf(false) }
+    var editDialogOpen by remember { mutableStateOf(false) }
+    var deleteDialogOpen by remember { mutableStateOf(false) }
+    var editTitle by remember { mutableStateOf(session.title) }
+
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
@@ -172,31 +201,111 @@ private fun ChatSessionItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${session.messageCount} messages",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = formatTimestamp(session.updatedAt),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatTimestamp(session.updatedAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${session.messageCount} messages)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit title") },
+                        onClick = {
+                            menuExpanded = false
+                            editTitle = session.title
+                            editDialogOpen = true
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete session") },
+                        onClick = {
+                            menuExpanded = false
+                            deleteDialogOpen = true
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                        }
+                    )
+                }
             }
         }
+    }
+
+    if (editDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { editDialogOpen = false },
+            title = { Text("Edit Title") },
+            text = {
+                TextField(
+                    value = editTitle,
+                    onValueChange = { editTitle = it },
+                    label = { Text("Title") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEditTitle(editTitle)
+                        editDialogOpen = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editDialogOpen = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (deleteDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { deleteDialogOpen = false },
+            title = { Text("Delete Session") },
+            text = { Text("Are you sure you want to delete this chat session? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        deleteDialogOpen = false
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteDialogOpen = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
 private fun formatTimestamp(timestamp: Long): String {
-    val date = Date(timestamp)
-    val now = Date()
-    val diff = now.time - timestamp
-
-    return when {
-        diff < 60 * 1000 -> "Just now"
-        diff < 60 * 60 * 1000 -> "${diff / (60 * 1000)}m ago"
-        diff < 24 * 60 * 60 * 1000 -> "${diff / (60 * 60 * 1000)}h ago"
-        else -> SimpleDateFormat("MMM d", Locale.getDefault()).format(date)
-    }
+    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }

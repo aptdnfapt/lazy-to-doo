@@ -24,7 +24,9 @@ import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -108,38 +110,13 @@ fun CategoryAccordion(
                         )
                 }
 
-                // 3-dot menu for category
-                Box {
-                    IconButton(onClick = { showCategoryMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Category options")
-                    }
-
-                    DropdownMenu(
-                        expanded = showCategoryMenu,
-                        onDismissRequest = { showCategoryMenu = false }
-                    ) {
-                        if (!category.isDefault) {  // Can't delete default categories
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Delete category",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                onClick = {
-                                    showDeleteCategoryDialog = true
-                                    showCategoryMenu = false
-                                }
-                            )
-                        }
-                    }
+                // Delete button for category
+                IconButton(onClick = { showDeleteCategoryDialog = true }) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete category",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
 
@@ -155,7 +132,7 @@ fun CategoryAccordion(
                         )
                     },
                     confirmButton = {
-                        Button(
+                        OutlinedButton(
                             onClick = {
                                 onDeleteCategory()
                                 showDeleteCategoryDialog = false
@@ -220,7 +197,7 @@ fun CategoryAccordion(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             statusTodos.forEach { todo ->
-                                TodoCard(
+                                TodoOutlinedCard(
                                     todo = todo,
                                     categories = allCategories.filter { it.id != todo.categoryId },
                                     onClick = { onTodoClick(todo) },

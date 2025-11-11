@@ -2,6 +2,7 @@ package com.yourname.voicetodo.data.repository
 
 import com.yourname.voicetodo.data.local.ChatSessionDao
 import com.yourname.voicetodo.data.local.ChatSessionEntity
+import com.yourname.voicetodo.data.local.ChatSessionWithMessageCount
 import com.yourname.voicetodo.data.local.MessageDao
 import com.yourname.voicetodo.data.local.MessageEntity
 import com.yourname.voicetodo.domain.model.ChatSession
@@ -9,6 +10,7 @@ import com.yourname.voicetodo.domain.model.Message
 import com.yourname.voicetodo.domain.model.MessageType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
@@ -21,13 +23,14 @@ class ChatRepository @Inject constructor(
 ) {
 
     fun getAllChatSessions(): Flow<List<ChatSession>> {
-        return chatSessionDao.getAllChatSessions().map { entities ->
-            entities.map { entity ->
+        return chatSessionDao.getAllChatSessionsWithMessageCount().map { sessions ->
+            sessions.map { session ->
                 ChatSession(
-                    id = entity.id,
-                    title = entity.title,
-                    createdAt = entity.createdAt,
-                    updatedAt = entity.updatedAt
+                    id = session.id,
+                    title = session.title,
+                    createdAt = session.createdAt,
+                    updatedAt = session.updatedAt,
+                    messageCount = session.messageCount
                 )
             }
         }
@@ -147,5 +150,30 @@ class ChatRepository @Inject constructor(
     suspend fun deleteMessage(messageId: String) {
         val entity = messageDao.getMessageById(messageId)
         entity?.let { messageDao.deleteMessage(it) }
+    }
+
+    suspend fun searchChatSessions(query: String): List<ChatSession> {
+        if (query.isBlank()) {
+            return getAllChatSessions().first()
+        }
+
+        val sessionsByTitle = chatSessionDao.searchChatSessionsByTitle(query)
+        val sessionIdsByMessage = messageDao.getSessionIdsWithMessageContent(query)
+
+        val allSessionIds = (sessionsByTitle.map { it.id } + sessionIdsByMessage).distinct()
+
+        return allSessionIds.mapNotNull { sessionId ->
+            val session = chatSessionDao.getChatSessionById(sessionId)
+            session?.let {
+                val messageCount = messageDao.getMessageCountForSession(sessionId)
+                ChatSession(
+                    id = it.id,
+                    title = it.title,
+                    createdAt = it.createdAt,
+                    updatedAt = it.updatedAt,
+                    messageCount = messageCount
+                )
+            }
+        }.sortedByDescending { it.updatedAt }
     }
 }

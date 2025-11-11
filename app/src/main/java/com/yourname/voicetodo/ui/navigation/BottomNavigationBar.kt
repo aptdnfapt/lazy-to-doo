@@ -31,7 +31,7 @@ fun BottomNavigationBar(
         ),
         BottomNavItem(
             screen = Screen.Settings,
-            title = "Tasks",
+            title = "Settings",
             icon = Icons.Default.List
         )
     )

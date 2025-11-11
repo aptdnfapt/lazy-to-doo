@@ -5,41 +5,48 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Dark theme colors matching HTML
+// Professional black-based dark theme
 private val DarkColorScheme = darkColorScheme(
     primary = Primary,
     onPrimary = White,
-    primaryContainer = Gray800,
+    primaryContainer = PrimaryVariant,
     onPrimaryContainer = White,
 
-    secondary = Gray200,
-    onSecondary = Black,
-    secondaryContainer = Gray800,
-    onSecondaryContainer = White,
+    secondary = MutedGray,
+    onSecondary = White,
+    secondaryContainer = SurfaceVariant,
+    onSecondaryContainer = OnSurface,
 
-    background = BackgroundDark,
-    onBackground = White,
+    background = Black,
+    onBackground = OnSurface,
 
-    surface = BackgroundDark,
-    onSurface = White,
-    surfaceVariant = Gray800,
-    onSurfaceVariant = Gray200,
+    surface = Surface,
+    onSurface = OnSurface,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = OnSurfaceSecondary,
 
-    error = Color(0xFFCF6679),
-    onError = Black,
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6),
+    inverseSurface = NearBlack,
+    inverseOnSurface = OnSurface,
+    inversePrimary = PrimaryVariant,
 
-    outline = Gray800,
-    outlineVariant = Gray200
+    error = Error,
+    onError = White,
+    errorContainer = Color(0xFF2A1515),
+    onErrorContainer = Color(0xFFFFB4B4),
+
+    outline = LightGray,
+    outlineVariant = DarkGray,
+
+    scrim = Color(0x80000000),  // Semi-transparent black overlay
+    surfaceTint = Primary
 )
 
-// Light theme colors matching HTML
+// Refined light theme with better contrast
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
     onPrimary = White,
-    primaryContainer = Gray200,
-    onPrimaryContainer = Black,
+    primaryContainer = PrimaryVariant,
+    onPrimaryContainer = White,
 
     secondary = Gray800,
     onSecondary = White,
@@ -49,23 +56,30 @@ private val LightColorScheme = lightColorScheme(
     background = BackgroundLight,
     onBackground = Black,
 
-    surface = BackgroundLight,
+    surface = White,
     onSurface = Black,
     surfaceVariant = Gray200,
     onSurfaceVariant = Gray800,
 
-    error = Color(0xFFB00020),
+    inverseSurface = Gray800,
+    inverseOnSurface = White,
+    inversePrimary = PrimaryVariant,
+
+    error = Error,
     onError = White,
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF93000A),
 
     outline = Gray200,
-    outlineVariant = Gray800
+    outlineVariant = Gray800,
+
+    scrim = Color(0x40000000),
+    surfaceTint = Primary
 )
 
 @Composable
 fun VoiceTodoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,  // Force dark mode as default
     useDynamicColors: Boolean = false,  // Set to false for custom themes
     content: @Composable () -> Unit
 ) {

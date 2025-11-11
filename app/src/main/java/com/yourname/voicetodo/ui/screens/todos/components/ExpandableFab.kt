@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
+
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
@@ -78,7 +78,7 @@ fun ExpandableFab(
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(
-                imageVector = if (expanded) Icons.Filled.Close else Icons.Filled.AutoAwesome,
+                imageVector = if (expanded) Icons.Filled.Close else Icons.Filled.Add,
                 contentDescription = if (expanded) "Close" else "Add",
             )
         }

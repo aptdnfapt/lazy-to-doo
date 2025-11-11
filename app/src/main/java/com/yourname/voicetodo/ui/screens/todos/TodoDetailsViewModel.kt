@@ -100,6 +100,28 @@ class TodoDetailsViewModel @Inject constructor(
         }
     }
 
+    fun toggleCheckboxInMarkdown(lineIndex: Int, checked: Boolean) {
+        val lines = _markdownContent.value.lines().toMutableList()
+        if (lineIndex < lines.size) {
+            val line = lines[lineIndex].trim()
+            val newLine = if (checked) {
+                if (line.startsWith("- [ ]")) {
+                    line.replaceFirst("- [ ]", "- [x]")
+                } else {
+                    line
+                }
+            } else {
+                if (line.startsWith("- [x]") || line.startsWith("- [X]")) {
+                    line.replaceFirst("- [x]", "- [ ]").replaceFirst("- [X]", "- [ ]")
+                } else {
+                    line
+                }
+            }
+            lines[lineIndex] = newLine
+            _markdownContent.value = lines.joinToString("\n")
+        }
+    }
+
     fun updateTitle(title: String) {
         val currentTodo = _todo.value ?: return
         val updatedTodo = currentTodo.copy(title = title)

@@ -3,6 +3,7 @@ package com.yourname.voicetodo.ui.screens.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.voicetodo.data.preferences.UserPreferences
+import com.yourname.voicetodo.domain.model.LLMProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,9 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     // LLM Provider Settings
+    val llmProvider = preferences.getLlmProvider()
+        .stateIn(viewModelScope, SharingStarted.Lazily, LLMProvider.OPENAI)
+
     val llmBaseUrl = preferences.getLlmBaseUrl()
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
@@ -46,6 +50,12 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     // Update functions
+    fun updateLlmProvider(provider: LLMProvider) {
+        viewModelScope.launch {
+            preferences.setLlmProvider(provider)
+        }
+    }
+
     fun updateLlmBaseUrl(url: String) {
         viewModelScope.launch {
             preferences.setLlmBaseUrl(url.trim())

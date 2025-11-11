@@ -20,10 +20,12 @@ import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
+
 
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,13 +123,7 @@ fun ChatScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("AI Assistant", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = { navController.navigate("settings") }) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Settings"
-                    )
-                }
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -183,7 +179,7 @@ fun ChatScreen(
 
         // Error message
         errorMessage?.let { error ->
-            Card(
+            OutlinedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)

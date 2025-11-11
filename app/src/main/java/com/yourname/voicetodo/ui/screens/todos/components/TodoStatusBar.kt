@@ -25,42 +25,47 @@ fun TodoStatusBar(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatusButton(
+                StatusOutlinedButton(
                     status = TodoStatus.TODO,
                     isSelected = currentStatus == TodoStatus.TODO,
-                    onClick = { onStatusChange(TodoStatus.TODO) }
+                    onClick = { onStatusChange(TodoStatus.TODO) },
+                    modifier = Modifier.weight(1f)
                 )
-                StatusButton(
+                StatusOutlinedButton(
                     status = TodoStatus.IN_PROGRESS,
                     isSelected = currentStatus == TodoStatus.IN_PROGRESS,
-                    onClick = { onStatusChange(TodoStatus.IN_PROGRESS) }
+                    onClick = { onStatusChange(TodoStatus.IN_PROGRESS) },
+                    modifier = Modifier.weight(1f)
                 )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatusButton(
+                StatusOutlinedButton(
                     status = TodoStatus.DONE,
                     isSelected = currentStatus == TodoStatus.DONE,
-                    onClick = { onStatusChange(TodoStatus.DONE) }
+                    onClick = { onStatusChange(TodoStatus.DONE) },
+                    modifier = Modifier.weight(1f)
                 )
-                StatusButton(
+                StatusOutlinedButton(
                     status = TodoStatus.DO_LATER,
                     isSelected = currentStatus == TodoStatus.DO_LATER,
-                    onClick = { onStatusChange(TodoStatus.DO_LATER) }
+                    onClick = { onStatusChange(TodoStatus.DO_LATER) },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -68,28 +73,35 @@ fun TodoStatusBar(
 }
 
 @Composable
-fun StatusButton(
+fun StatusOutlinedButton(
     status: TodoStatus,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(12.dp),
         color = if (isSelected)
                 MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.padding(horizontal = 4.dp)
+        border = if (!isSelected) 
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        else null,
+        modifier = modifier
     ) {
         Text(
             text = getStatusDisplayName(status),
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 8.dp),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             color = if (isSelected)
                     MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
         )
     }
 }
