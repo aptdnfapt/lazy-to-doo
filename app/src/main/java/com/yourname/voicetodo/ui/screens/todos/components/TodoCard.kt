@@ -1,5 +1,6 @@
 package com.yourname.voicetodo.ui.screens.todos.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -31,11 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yourname.voicetodo.domain.model.Category
 import com.yourname.voicetodo.domain.model.Todo
+import com.yourname.voicetodo.domain.model.TodoStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,8 +63,6 @@ fun TodoCard(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
-        tonalElevation = 1.dp,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 2.dp)
@@ -75,14 +79,22 @@ fun TodoCard(
                     .weight(1f)
                     .padding(end = 8.dp)
             ) {
-                Text(
-                    text = todo.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = MaterialTheme.typography.titleMedium.lineHeight
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(getPriorityColor(todo.status), CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = todo.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = MaterialTheme.typography.titleMedium.lineHeight
+                    )
+                }
                 todo.description?.let { desc ->
                     if (desc.isNotBlank()) {
                         Spacer(modifier = Modifier.height(6.dp))
@@ -220,6 +232,15 @@ fun TodoCard(
 private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+private fun getPriorityColor(status: TodoStatus): Color {
+    return when (status) {
+        TodoStatus.TODO -> Color(0xFF4CAF50) // Green
+        TodoStatus.IN_PROGRESS -> Color(0xFFFF9800) // Orange
+        TodoStatus.DONE -> Color(0xFF2196F3) // Blue
+        TodoStatus.DO_LATER -> Color(0xFF9E9E9E) // Grey
+    }
 }
 
 private fun getStatusDisplayNameForCard(status: com.yourname.voicetodo.domain.model.TodoStatus): String {

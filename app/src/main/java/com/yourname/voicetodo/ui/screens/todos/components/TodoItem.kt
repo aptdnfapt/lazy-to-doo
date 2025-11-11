@@ -61,8 +61,7 @@ fun TodoItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onEdit(todo) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable { onEdit(todo) }
     ) {
         Column(
             modifier = Modifier

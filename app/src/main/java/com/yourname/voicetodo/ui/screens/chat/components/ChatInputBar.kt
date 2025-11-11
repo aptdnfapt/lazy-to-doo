@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
@@ -94,7 +94,7 @@ fun ChatInputBar(
                             else MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.Send,
+                        imageVector = Icons.Filled.ArrowUpward,
                         contentDescription = "Send",
                         tint = if (textInput.isNotBlank())
                                MaterialTheme.colorScheme.onPrimary

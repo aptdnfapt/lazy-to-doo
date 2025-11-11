@@ -5,62 +5,62 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Dark theme colors (BLACK background, flat design)
+// Dark theme colors matching HTML
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF90CAF9),           // Light blue
-    onPrimary = Color(0xFF000000),         // Black text on primary
-    primaryContainer = Color(0xFF1E1E1E),  // Dark gray container
-    onPrimaryContainer = Color(0xFFE0E0E0),
+    primary = Primary,
+    onPrimary = White,
+    primaryContainer = Gray800,
+    onPrimaryContainer = White,
 
-    secondary = Color(0xFFB0BEC5),         // Gray blue
-    onSecondary = Color(0xFF000000),
-    secondaryContainer = Color(0xFF263238),
-    onSecondaryContainer = Color(0xFFE0E0E0),
+    secondary = Gray200,
+    onSecondary = Black,
+    secondaryContainer = Gray800,
+    onSecondaryContainer = White,
 
-    background = Color(0xFF000000),        // Pure black
-    onBackground = Color(0xFFFFFFFF),      // White text
+    background = BackgroundDark,
+    onBackground = White,
 
-    surface = Color(0xFF121212),           // Very dark gray
-    onSurface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFF1E1E1E),    // Slightly lighter
-    onSurfaceVariant = Color(0xFFB0B0B0),
+    surface = BackgroundDark,
+    onSurface = White,
+    surfaceVariant = Gray800,
+    onSurfaceVariant = Gray200,
 
     error = Color(0xFFCF6679),
-    onError = Color(0xFF000000),
+    onError = Black,
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6),
 
-    outline = Color(0xFF3A3A3A),           // Subtle borders
-    outlineVariant = Color(0xFF2A2A2A)
+    outline = Gray800,
+    outlineVariant = Gray200
 )
 
-// Light theme colors (WHITE background, flat design)
+// Light theme colors matching HTML
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF1976D2),           // Blue
-    onPrimary = Color(0xFFFFFFFF),         // White text on primary
-    primaryContainer = Color(0xFFE3F2FD),  // Light blue container
-    onPrimaryContainer = Color(0xFF0D47A1),
+    primary = Primary,
+    onPrimary = White,
+    primaryContainer = Gray200,
+    onPrimaryContainer = Black,
 
-    secondary = Color(0xFF546E7A),         // Blue gray
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFECEFF1),
-    onSecondaryContainer = Color(0xFF263238),
+    secondary = Gray800,
+    onSecondary = White,
+    secondaryContainer = Gray200,
+    onSecondaryContainer = Black,
 
-    background = Color(0xFFFFFFFF),        // Pure white
-    onBackground = Color(0xFF000000),      // Black text
+    background = BackgroundLight,
+    onBackground = Black,
 
-    surface = Color(0xFFFAFAFA),           // Very light gray
-    onSurface = Color(0xFF000000),
-    surfaceVariant = Color(0xFFF5F5F5),    // Slightly darker
-    onSurfaceVariant = Color(0xFF5F5F5F),
+    surface = BackgroundLight,
+    onSurface = Black,
+    surfaceVariant = Gray200,
+    onSurfaceVariant = Gray800,
 
     error = Color(0xFFB00020),
-    onError = Color(0xFFFFFFFF),
+    onError = White,
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF93000A),
 
-    outline = Color(0xFFDDDDDD),           // Subtle borders
-    outlineVariant = Color(0xFFEEEEEE)
+    outline = Gray200,
+    outlineVariant = Gray800
 )
 
 @Composable

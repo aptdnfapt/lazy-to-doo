@@ -1,9 +1,9 @@
 package com.yourname.voicetodo.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -22,17 +22,17 @@ fun BottomNavigationBar(
         BottomNavItem(
             screen = Screen.ChatList,
             title = "Chat",
-            icon = Icons.Default.Info
+            icon = Icons.Default.Chat
         ),
         BottomNavItem(
             screen = Screen.Todos,
-            title = "Todos",
-            icon = Icons.Default.List
+            title = "Dashboard",
+            icon = Icons.Default.Dashboard
         ),
         BottomNavItem(
             screen = Screen.Settings,
-            title = "Settings",
-            icon = Icons.Default.Settings
+            title = "Tasks",
+            icon = Icons.Default.List
         )
     )
 

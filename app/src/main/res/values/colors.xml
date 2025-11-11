@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Light theme colors -->
-    <color name="md_theme_light_primary">#1976D2</color>
+    <color name="md_theme_light_primary">#137fec</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
     <color name="md_theme_light_primaryContainer">#E3F2FD</color>
     <color name="md_theme_light_onPrimaryContainer">#0D47A1</color>
@@ -30,7 +30,7 @@
     <color name="md_theme_light_inversePrimary">#A4C9FF</color>
 
     <!-- Dark theme colors -->
-    <color name="md_theme_dark_primary">#90CAF9</color>
+    <color name="md_theme_dark_primary">#137fec</color>
     <color name="md_theme_dark_onPrimary">#0D47A1</color>
     <color name="md_theme_dark_primaryContainer">#1565C0</color>
     <color name="md_theme_dark_onPrimaryContainer">#E3F2FD</color>

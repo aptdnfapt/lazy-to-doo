@@ -39,25 +39,6 @@ fun MessageBubble(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        if (!isUser) {
-            // Bot avatar
-            Box(
-                modifier = Modifier
-                    .width(32.dp)
-                    .height(32.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🤖",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        
         Column(
             modifier = Modifier,
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start

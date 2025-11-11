@@ -1,5 +1,6 @@
 package com.yourname.voicetodo.ui.screens.chat
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Arrangement
@@ -11,21 +12,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,24 +57,24 @@ fun ChatListScreen(
     viewModel: ChatListViewModel = hiltViewModel()
 ) {
     val chatSessions by viewModel.chatSessions.collectAsState(initial = emptyList())
-    var sessionToDelete by remember { mutableStateOf<ChatSession?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredSessions = chatSessions.filter { it.title.contains(searchQuery, ignoreCase = true) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chat Sessions") }
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                title = { Text("Chat History") }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.createNewChatSession(navController) }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "New Chat")
-            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            if (chatSessions.isEmpty()) {
+            if (filteredSessions.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -79,60 +83,47 @@ fun ChatListScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "No chat sessions yet",
+                        text = if (searchQuery.isNotEmpty()) "No conversations found" else "No chat sessions yet",
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Tap the + button to start a new chat",
+                        text = if (searchQuery.isNotEmpty()) "Try a different search" else "Start a new conversation to see it here",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(chatSessions) { session ->
-                        ChatSessionItem(
-                            session = session,
-                            onClick = {
-                                navController.navigate(Screen.Chat.createRoute(session.id))
-                            },
-                            onDelete = { sessionToDelete = session }
-                        )
+                Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 8.dp),
+                        placeholder = { Text("Search conversations...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        singleLine = true
+                    )
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredSessions) { session ->
+                            ChatSessionItem(
+                                session = session,
+                                onClick = {
+                                    navController.navigate(Screen.Chat.createRoute(session.id))
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
-
-        // Delete confirmation dialog
-        sessionToDelete?.let { session ->
-            AlertDialog(
-                onDismissRequest = { sessionToDelete = null },
-                title = { Text("Delete Chat Session") },
-                text = { Text("Are you sure you want to delete \"${session.title}\"? This action cannot be undone.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.deleteChatSession(session.id)
-                            sessionToDelete = null
-                        }
-                    ) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { sessionToDelete = null }) {
-                        Text("Cancel")
-                    }
-                }
-            )
         }
     }
 }
@@ -140,8 +131,7 @@ fun ChatListScreen(
 @Composable
 private fun ChatSessionItem(
     session: ChatSession,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -155,6 +145,22 @@ private fun ChatSessionItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.SmartToy,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -166,28 +172,16 @@ private fun ChatSessionItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = formatTimestamp(session.updatedAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (session.messageCount > 0) {
-                        Text(
-                            text = " • ${session.messageCount} messages",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete chat session",
-                    tint = MaterialTheme.colorScheme.error
+                Text(
+                    text = "${session.messageCount} messages",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatTimestamp(session.updatedAt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

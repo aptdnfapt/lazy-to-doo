@@ -5,10 +5,10 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 val Shapes = Shapes(
-    // Flat design with minimal rounding
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(20.dp)
+    // Matching HTML rounded corners
+    extraSmall = RoundedCornerShape(4.dp), // default
+    small = RoundedCornerShape(8.dp),      // lg
+    medium = RoundedCornerShape(12.dp),    // xl
+    large = RoundedCornerShape(50.dp),     // full
+    extraLarge = RoundedCornerShape(16.dp)
 )

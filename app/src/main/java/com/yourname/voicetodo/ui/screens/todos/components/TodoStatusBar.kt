@@ -2,6 +2,7 @@ package com.yourname.voicetodo.ui.screens.todos.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,20 +25,42 @@ fun TodoStatusBar(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp
+        color = MaterialTheme.colorScheme.surface
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TodoStatus.values().forEach { status ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 StatusButton(
-                    status = status,
-                    isSelected = currentStatus == status,
-                    onClick = { onStatusChange(status) }
+                    status = TodoStatus.TODO,
+                    isSelected = currentStatus == TodoStatus.TODO,
+                    onClick = { onStatusChange(TodoStatus.TODO) }
+                )
+                StatusButton(
+                    status = TodoStatus.IN_PROGRESS,
+                    isSelected = currentStatus == TodoStatus.IN_PROGRESS,
+                    onClick = { onStatusChange(TodoStatus.IN_PROGRESS) }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatusButton(
+                    status = TodoStatus.DONE,
+                    isSelected = currentStatus == TodoStatus.DONE,
+                    onClick = { onStatusChange(TodoStatus.DONE) }
+                )
+                StatusButton(
+                    status = TodoStatus.DO_LATER,
+                    isSelected = currentStatus == TodoStatus.DO_LATER,
+                    onClick = { onStatusChange(TodoStatus.DO_LATER) }
                 )
             }
         }

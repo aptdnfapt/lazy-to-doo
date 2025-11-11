@@ -16,9 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -109,15 +111,23 @@ fun ChatScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("AI Assistant", style = MaterialTheme.typography.headlineSmall)
-                Text(
-                    text = currentModel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Icon(
+                    imageVector = Icons.Filled.Checklist,
+                    contentDescription = "Checklist",
+                    tint = MaterialTheme.colorScheme.primary
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("AI Assistant", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = { navController.navigate("settings") }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings"
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))

@@ -131,7 +131,7 @@ fun AddTodoDialog(
                 Text("Cancel")
             }
         },
-        modifier = Modifier.padding(8.dp)
+        modifier = Modifier.padding(16.dp)
     )
 }
 

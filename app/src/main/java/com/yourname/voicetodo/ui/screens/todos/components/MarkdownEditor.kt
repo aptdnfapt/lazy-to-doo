@@ -111,7 +111,7 @@ fun MarkdownToolbar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             ToolbarButton(icon = Icons.Filled.Check, tooltip = "Checkbox", onClick = onInsertCheckbox)

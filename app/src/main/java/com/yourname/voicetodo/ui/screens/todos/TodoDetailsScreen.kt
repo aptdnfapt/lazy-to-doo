@@ -15,10 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -66,7 +66,7 @@ fun TodoDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Task Details") },
+                title = { Text(todo?.title ?: "Task Details") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -112,7 +112,7 @@ fun TodoDetailsScreen(
             category?.let { cat ->
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(android.graphics.Color.parseColor(cat.color)).copy(alpha = 0.2f),
+                    color = Color(0xFF009688).copy(alpha = 0.2f),
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Row(
@@ -120,15 +120,15 @@ fun TodoDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Filled.Label,
+                            Icons.Filled.Sell,
                             contentDescription = null,
-                            tint = Color(android.graphics.Color.parseColor(cat.color))
+                            tint = Color(0xFF009688)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Sector: ${cat.displayName}",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(android.graphics.Color.parseColor(cat.color))
+                            color = Color(0xFF009688)
                         )
                     }
                 }
@@ -140,7 +140,7 @@ fun TodoDetailsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Filled.Star,
+                    Icons.Filled.AutoAwesome,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
