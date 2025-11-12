@@ -95,6 +95,7 @@ fun TodoListScreen(
                         },
                         onDeleteTodo = { todo -> viewModel.deleteTodo(todo.id) },
                         onDeleteCategory = { viewModel.deleteCategory(category.id) },
+                        onEditCategory = { viewModel.editCategory(it) },
                         allCategories = categories
                     )
                 }

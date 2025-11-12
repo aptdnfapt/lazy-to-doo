@@ -27,7 +27,7 @@ fun MarkdownRenderer(
     onCheckboxToggle: (Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val parsedLines = remember(content) { parseMarkdown(content) }
+    val (parsedLines, lineMapping) = remember(content) { parseMarkdownWithMapping(content) }
 
     Column(
         modifier = modifier,
@@ -50,7 +50,7 @@ fun MarkdownRenderer(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = line.checked,
-                            onCheckedChange = { onCheckboxToggle(index, it) }
+                            onCheckedChange = { onCheckboxToggle(lineMapping[index], it) }
                         )
                         Text(
                             text = line.annotatedText,
@@ -125,12 +125,39 @@ fun parseMarkdown(content: String): List<MarkdownLine> {
             line.startsWith("# ") -> MarkdownLine.Heading(1, line.removePrefix("# "))
             line.startsWith("## ") -> MarkdownLine.Heading(2, line.removePrefix("## "))
             line.startsWith("### ") -> MarkdownLine.Heading(3, line.removePrefix("### "))
-            line.trim().startsWith("- [ ]") -> MarkdownLine.Checkbox(false, parseInlineMarkdown(line.trim().removePrefix("- [ ]").trim()))
-            line.trim().startsWith("- [x]") || line.trim().startsWith("- [X]") ->
-                MarkdownLine.Checkbox(true, parseInlineMarkdown(line.trim().removePrefix("- [x]").removePrefix("- [X]").trim()))
+            line.trim().startsWith("[]") -> MarkdownLine.Checkbox(false, parseInlineMarkdown(line.trim().removePrefix("[]").trim()))
+            line.trim().startsWith("[x]") || line.trim().startsWith("[X]") ->
+                MarkdownLine.Checkbox(true, parseInlineMarkdown(line.trim().removePrefix("[x]").removePrefix("[X]").trim()))
             line.trim().startsWith("- ") -> MarkdownLine.ListItem(parseInlineMarkdown(line.trim().removePrefix("- ")))
             line.isNotBlank() -> MarkdownLine.Plain(parseInlineMarkdown(line))
             else -> null
         }
     }
+}
+
+fun parseMarkdownWithMapping(content: String): Pair<List<MarkdownLine>, List<Int>> {
+    val allLines = content.lines()
+    val parsedLines = mutableListOf<MarkdownLine>()
+    val lineMapping = mutableListOf<Int>()
+    
+    allLines.forEachIndexed { originalIndex, line ->
+        val parsedLine = when {
+            line.startsWith("# ") -> MarkdownLine.Heading(1, line.removePrefix("# "))
+            line.startsWith("## ") -> MarkdownLine.Heading(2, line.removePrefix("## "))
+            line.startsWith("### ") -> MarkdownLine.Heading(3, line.removePrefix("### "))
+            line.trim().startsWith("[]") -> MarkdownLine.Checkbox(false, parseInlineMarkdown(line.trim().removePrefix("[]").trim()))
+            line.trim().startsWith("[x]") || line.trim().startsWith("[X]") ->
+                MarkdownLine.Checkbox(true, parseInlineMarkdown(line.trim().removePrefix("[x]").removePrefix("[X]").trim()))
+            line.trim().startsWith("- ") -> MarkdownLine.ListItem(parseInlineMarkdown(line.trim().removePrefix("- ")))
+            line.isNotBlank() -> MarkdownLine.Plain(parseInlineMarkdown(line))
+            else -> null
+        }
+        
+        parsedLine?.let {
+            parsedLines.add(it)
+            lineMapping.add(originalIndex)
+        }
+    }
+    
+    return Pair(parsedLines, lineMapping)
 }

@@ -16,7 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -77,7 +78,7 @@ fun MarkdownEditor(
         // Markdown toolbar
         MarkdownToolbar(
             onInsertCheckbox = {
-                insertAtCursor(textFieldValue, "\n- [ ] ", onContentChange) { newTextFieldValue ->
+                insertAtCursor(textFieldValue, "\n[] ", onContentChange) { newTextFieldValue ->
                     textFieldValue = newTextFieldValue
                 }
             },
@@ -123,6 +124,12 @@ fun MarkdownEditor(
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
+                cursorBrush = Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.primary
+                    )
+                ),
                 decorationBox = { innerTextField ->
                     if (textFieldValue.text.isEmpty()) {
                         Text(
@@ -162,7 +169,7 @@ fun MarkdownToolbar(
             ToolbarOutlinedButton(icon = Icons.Filled.Check, tooltip = "Checkbox", onClick = onInsertCheckbox)
             ToolbarOutlinedButton(icon = Icons.Filled.Star, tooltip = "Bold", onClick = onInsertBold)
             ToolbarOutlinedButton(icon = Icons.Filled.Info, tooltip = "Italic", onClick = onInsertItalic)
-            ToolbarOutlinedButton(icon = Icons.Filled.List, tooltip = "List", onClick = onInsertList)
+            ToolbarOutlinedButton(icon = Icons.AutoMirrored.Filled.List, tooltip = "List", onClick = onInsertList)
             ToolbarOutlinedButton(icon = Icons.Filled.TextFields, tooltip = "Heading", onClick = onInsertHeading)
         }
     }

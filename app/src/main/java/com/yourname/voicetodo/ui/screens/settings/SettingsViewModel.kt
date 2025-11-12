@@ -39,6 +39,9 @@ class SettingsViewModel @Inject constructor(
     val voiceInputEnabled = preferences.getVoiceInputEnabled()
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
+    val voiceEndpoint = preferences.getVoiceEndpoint()
+        .stateIn(viewModelScope, SharingStarted.Lazily, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp")
+
     // General Settings
     val themeMode = preferences.getThemeMode()
         .stateIn(viewModelScope, SharingStarted.Lazily, UserPreferences.ThemeMode.SYSTEM)
@@ -83,6 +86,12 @@ class SettingsViewModel @Inject constructor(
     fun updateVoiceInputEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferences.setVoiceInputEnabled(enabled)
+        }
+    }
+
+    fun updateVoiceEndpoint(endpoint: String) {
+        viewModelScope.launch {
+            preferences.setVoiceEndpoint(endpoint.trim())
         }
     }
 

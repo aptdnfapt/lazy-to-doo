@@ -80,6 +80,16 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    fun getVoiceEndpoint(): Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.VOICE_ENDPOINT] ?: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp"
+    }
+
+    suspend fun setVoiceEndpoint(endpoint: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.VOICE_ENDPOINT] = endpoint
+        }
+    }
+
     // Theme preference
     fun getThemeMode(): Flow<ThemeMode> = dataStore.data.map { preferences ->
         val mode = preferences[PreferencesKeys.THEME_MODE] ?: "SYSTEM"

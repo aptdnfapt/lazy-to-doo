@@ -3,19 +3,24 @@ package com.yourname.voicetodo.ai.transcription
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
+import javax.inject.Inject
 
-class WhisperTranscriber(private val context: Context) {
+class WhisperTranscriber @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+    private val userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences
+) {
     companion object {
-        private const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+        private const val TAG = "WhisperTranscriber"
     }
 
-    private val TAG = "WhisperTranscriber"
     private var currentTranscriptionJob: Job? = null
 
     suspend fun transcribe(audioFile: File, apiKey: String): String {
@@ -25,7 +30,11 @@ class WhisperTranscriber(private val context: Context) {
                     throw Exception("Gemini API key is not set")
                 }
 
-                val url = "$GEMINI_ENDPOINT?key=$apiKey"
+                // Get the configurable endpoint from user preferences
+                val endpoint = userPreferences.getVoiceEndpoint().first()
+                val fullEndpoint = "$endpoint:generateContent"
+                
+                val url = "$fullEndpoint?key=$apiKey"
                 val request = buildGeminiRequest(audioFile, url)
                 
                 val client = okhttp3.OkHttpClient()

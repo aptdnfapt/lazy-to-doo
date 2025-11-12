@@ -178,6 +178,18 @@ class TodoListViewModel @Inject constructor(
         }
     }
 
+    fun editCategory(category: Category) {
+        // TODO: Implement category editing dialog
+        // For now, we'll show a basic implementation that logs the action
+        viewModelScope.launch {
+            try {
+                categoryRepository.updateCategory(category)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun createNewChatSession(navController: NavHostController) {
         viewModelScope.launch {
             try {

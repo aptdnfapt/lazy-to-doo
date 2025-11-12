@@ -27,8 +27,11 @@ object AIModule {
 
     @Provides
     @Singleton
-    fun provideWhisperTranscriber(@ApplicationContext context: Context): WhisperTranscriber {
-        return WhisperTranscriber(context)
+    fun provideWhisperTranscriber(
+        @ApplicationContext context: Context,
+        userPreferences: com.yourname.voicetodo.data.preferences.UserPreferences
+    ): WhisperTranscriber {
+        return WhisperTranscriber(context, userPreferences)
     }
 
     @Provides

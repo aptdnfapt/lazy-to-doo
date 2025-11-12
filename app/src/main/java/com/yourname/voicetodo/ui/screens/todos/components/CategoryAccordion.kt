@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Label
@@ -26,7 +27,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -65,6 +65,7 @@ fun CategoryAccordion(
     onMoveToCategory: (Todo, String) -> Unit,
     onDeleteTodo: (Todo) -> Unit,
     onDeleteCategory: () -> Unit,
+    onEditCategory: (Category) -> Unit,
     allCategories: List<Category> = emptyList()  // NEW: All categories for move menu
 ) {
     var showCategoryMenu by remember { mutableStateOf(false) }
@@ -110,13 +111,36 @@ fun CategoryAccordion(
                         )
                 }
 
-                // Delete button for category
-                IconButton(onClick = { showDeleteCategoryDialog = true }) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete category",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                // Three dot menu for category
+                Box {
+                    IconButton(onClick = { showCategoryMenu = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "Category options"
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showCategoryMenu,
+                        onDismissRequest = { showCategoryMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit title") },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                            onClick = {
+                                showCategoryMenu = false
+                                onEditCategory(category)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete category") },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                            onClick = {
+                                showCategoryMenu = false
+                                showDeleteCategoryDialog = true
+                            }
+                        )
+                    }
                 }
             }
 

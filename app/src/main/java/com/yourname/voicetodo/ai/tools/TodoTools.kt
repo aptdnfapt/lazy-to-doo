@@ -58,7 +58,7 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
-    @LLMDescription("Add a new todo item with title and optional description. Use description exactly as provided by user without asking for clarification.")
+    @LLMDescription("Add a new todo item with title and optional description. Use description exactly as provided by user without asking for clarification. Only create new todos when no existing related todos are found.")
     suspend fun addTodo(
         @LLMDescription("Title of the todo") title: String,
         @LLMDescription("Optional markdown description with subtasks - use exactly as provided by user") description: String? = null,
@@ -162,6 +162,44 @@ class TodoTools @Inject constructor(
                         }
                     } catch (e: Exception) {
                         "🔧 Tool Call: editTitle\n❌ Failed: ${e.message}"
+                    }
+                }
+            ),
+            checkPermission = { true }
+        ).result ?: throw Exception("Tool execution failed")
+    }
+
+    @Tool
+    @LLMDescription("Add a subtask to an existing todo using markdown checkbox format")
+    suspend fun addSubtask(
+        @LLMDescription("Todo ID to add subtask to") todoId: String,
+        @LLMDescription("Subtask description") subtask: String
+    ): String = executeWithPermission(
+        toolName = "addSubtask",
+        arguments = mapOf("todoId" to todoId, "subtask" to subtask)
+    ) {
+        retryableToolExecutor.executeWithRetry(
+            request = RetryableToolExecutor.ToolExecutionRequest(
+                toolName = "addSubtask",
+                arguments = mapOf("todoId" to todoId, "subtask" to subtask),
+                executeFunction = {
+                    try {
+                        val todo = repository.getTodoById(todoId)
+                        if (todo != null) {
+                            val currentDescription = todo.description ?: ""
+                            val newDescription = if (currentDescription.isBlank()) {
+                                "- [ ] $subtask"
+                            } else {
+                                "$currentDescription\n- [ ] $subtask"
+                            }
+                            val updatedTodo = todo.copy(description = newDescription)
+                            repository.updateTodo(updatedTodo)
+                            "🔧 Tool Call: addSubtask\n✅ Added subtask to '${todo.title}': $subtask"
+                        } else {
+                            "🔧 Tool Call: addSubtask\n❌ Todo with ID $todoId not found"
+                        }
+                    } catch (e: Exception) {
+                        "🔧 Tool Call: addSubtask\n❌ Failed: ${e.message}"
                     }
                 }
             ),
@@ -373,6 +411,53 @@ class TodoTools @Inject constructor(
                         "🔧 Tool Call: readOutLoud\n🔊 Reading: $text"
                     } catch (e: Exception) {
                         "🔧 Tool Call: readOutLoud\n❌ Failed: ${e.message}"
+                    }
+                }
+            ),
+            checkPermission = { true }
+        ).result ?: throw Exception("Tool execution failed")
+    }
+
+    @Tool
+    @LLMDescription("Find todos that might be related to a topic or keywords")
+    suspend fun findRelatedTodos(
+        @LLMDescription("Keywords to search for in todo titles and descriptions") keywords: String
+    ): String = executeWithPermission(
+        toolName = "findRelatedTodos",
+        arguments = mapOf("keywords" to keywords)
+    ) {
+        retryableToolExecutor.executeWithRetry(
+            request = RetryableToolExecutor.ToolExecutionRequest(
+                toolName = "findRelatedTodos",
+                arguments = mapOf("keywords" to keywords),
+                executeFunction = {
+                    try {
+                        val allTodos = runBlocking { repository.getAllTodos().first() }
+                        val searchTerms = keywords.lowercase().split("\\s+".toRegex())
+
+                        val relatedTodos = allTodos.filter { todo ->
+                            val searchableText = "${todo.title} ${todo.description ?: ""}".lowercase()
+                            searchTerms.any { term -> searchableText.contains(term) }
+                        }
+
+                        if (relatedTodos.isEmpty()) {
+                            return@ToolExecutionRequest "📝 No todos found related to: $keywords"
+                        }
+
+                        val todoList = relatedTodos.joinToString("\n") { todo ->
+                            val statusIcon = when (todo.status) {
+                                TodoStatus.TODO -> "📝"
+                                TodoStatus.IN_PROGRESS -> "🔄"
+                                TodoStatus.DONE -> "✅"
+                                TodoStatus.DO_LATER -> "⏰"
+                            }
+                            val desc = todo.description?.let { "\n   Description: \"${it.take(50)}...\"" } ?: ""
+                            "$statusIcon ${todo.title} [${todo.id}] (Category: ${todo.categoryId})$desc"
+                        }
+
+                        "📋 Related todos for '$keywords':\n$todoList"
+                    } catch (e: Exception) {
+                        "❌ Failed to search todos: ${e.message}"
                     }
                 }
             ),

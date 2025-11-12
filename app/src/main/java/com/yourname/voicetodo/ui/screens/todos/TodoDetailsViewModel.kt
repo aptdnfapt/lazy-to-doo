@@ -82,6 +82,16 @@ class TodoDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun persistMarkdownChange() {
+        val currentTodo = _todo.value ?: return
+        val updatedTodo = currentTodo.copy(description = _markdownContent.value)
+        _todo.value = updatedTodo
+
+        viewModelScope.launch {
+            todoRepository.updateTodo(updatedTodo)
+        }
+    }
+
     fun startEditing() {
         _isEditing.value = true
     }
@@ -105,22 +115,25 @@ class TodoDetailsViewModel @Inject constructor(
         if (lineIndex < lines.size) {
             val line = lines[lineIndex].trim()
             val newLine = if (checked) {
-                if (line.startsWith("- [ ]")) {
-                    line.replaceFirst("- [ ]", "- [x]")
+                if (line.startsWith("[]")) {
+                    line.replaceFirst("[]", "[x]")
                 } else {
                     line
                 }
             } else {
-                if (line.startsWith("- [x]")) {
-                    line.replaceFirst("- [x]", "- [ ]")
-                } else if (line.startsWith("- [X]")) {
-                    line.replaceFirst("- [X]", "- [ ]")
+                if (line.startsWith("[x]")) {
+                    line.replaceFirst("[x]", "[]")
+                } else if (line.startsWith("[X]")) {
+                    line.replaceFirst("[X]", "[]")
                 } else {
                     line
                 }
             }
             lines[lineIndex] = newLine
             _markdownContent.value = lines.joinToString("\n")
+            
+            // Persist the checkbox change to database
+            persistMarkdownChange()
         }
     }
 

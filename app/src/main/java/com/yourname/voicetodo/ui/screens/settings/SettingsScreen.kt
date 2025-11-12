@@ -65,6 +65,7 @@ fun SettingsScreen(
     val llmModelName by viewModel.llmModelName.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val voiceInputEnabled by viewModel.voiceInputEnabled.collectAsState()
+    val voiceEndpoint by viewModel.voiceEndpoint.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val ttsEnabled by viewModel.ttsEnabled.collectAsState()
     val autoExecute by viewModel.autoExecute.collectAsState()
@@ -280,6 +281,24 @@ fun SettingsScreen(
 
             // Voice-to-Text Settings
             SettingsSection(title = "Voice-to-Text Settings") {
+                OutlinedTextField(
+                    value = voiceEndpoint,
+                    onValueChange = viewModel::updateVoiceEndpoint,
+                    label = { Text("Voice Endpoint") },
+                    placeholder = { Text("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                )
+                
+                Text(
+                    text = "Configure the voice transcription endpoint. Use Google's Gemini endpoint or any compatible service.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = geminiApiKey,
                     onValueChange = viewModel::updateGeminiApiKey,

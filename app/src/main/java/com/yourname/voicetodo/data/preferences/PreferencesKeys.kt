@@ -14,6 +14,7 @@ object PreferencesKeys {
     // Voice-to-Text Settings
     val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
     val VOICE_INPUT_ENABLED = booleanPreferencesKey("voice_input_enabled")
+    val VOICE_ENDPOINT = stringPreferencesKey("voice_endpoint")
     
     // General Settings
     val THEME_MODE = stringPreferencesKey("theme_mode")
