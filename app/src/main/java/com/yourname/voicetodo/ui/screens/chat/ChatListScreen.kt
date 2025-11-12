@@ -89,60 +89,63 @@ fun ChatListScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp),
+                placeholder = { Text("Search conversations...") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                singleLine = true
+            )
+            
             if (filteredSessions.isEmpty()) {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "No conversations found" else "No chat sessions yet",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "Try a different search" else "Start a new conversation to see it here",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = if (searchQuery.isNotEmpty()) "No conversations found" else "No chat sessions yet",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (searchQuery.isNotEmpty()) "Try a different search" else "Start a new conversation to see it here",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 8.dp),
-                        placeholder = { Text("Search conversations...") },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        singleLine = true
-                    )
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(filteredSessions) { session ->
-                            ChatSessionItem(
-                                session = session,
-                                onClick = {
-                                    navController.navigate(Screen.Chat.createRoute(session.id))
-                                },
-                                onEditTitle = { newTitle ->
-                                    viewModel.updateChatSessionTitle(session.id, newTitle)
-                                },
-                                onDelete = {
-                                    viewModel.deleteChatSession(session.id)
-                                }
-                            )
-                        }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredSessions) { session ->
+                        ChatSessionItem(
+                            session = session,
+                            onClick = {
+                                navController.navigate(Screen.Chat.createRoute(session.id))
+                            },
+                            onEditTitle = { newTitle ->
+                                viewModel.updateChatSessionTitle(session.id, newTitle)
+                            },
+                            onDelete = {
+                                viewModel.deleteChatSession(session.id)
+                            }
+                        )
                     }
                 }
             }

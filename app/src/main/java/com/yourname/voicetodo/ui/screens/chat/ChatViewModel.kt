@@ -102,7 +102,18 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             ToolExecutionEvents.pendingRequests.collect { request ->
                 pendingPermissionRequest = request
-                addToolCallMessage(request.toolName, request.arguments, ToolCallStatus.PENDING_APPROVAL)
+
+                // Check if tool is auto-approved
+                val isAutoApproved = permissionManager.isToolAlwaysAllowed(request.toolName)
+
+                if (isAutoApproved) {
+                    // Auto-approve: mark as approved and execute immediately
+                    addToolCallMessage(request.toolName, request.arguments, ToolCallStatus.EXECUTING, autoApproved = true)
+                    request.onResponse(true)
+                } else {
+                    // Show permission dialog
+                    addToolCallMessage(request.toolName, request.arguments, ToolCallStatus.PENDING_APPROVAL, autoApproved = false)
+                }
             }
         }
 
@@ -308,16 +319,17 @@ class ChatViewModel @Inject constructor(
     private suspend fun addToolCallMessage(
         toolName: String,
         arguments: Map<String, Any?>,
-        status: ToolCallStatus
+        status: ToolCallStatus,
+        autoApproved: Boolean = false
     ) {
         if (currentSessionId.isEmpty()) return
 
         try {
             // Convert Map<String, Any?> to Map<String, String> for serialization
-            val stringArguments = arguments.mapValues { (_, value) -> 
-                value?.toString() ?: "null" 
+            val stringArguments = arguments.mapValues { (_, value) ->
+                value?.toString() ?: "null"
             }
-            
+
             val toolCallMessage = Message(
                 id = UUID.randomUUID().toString(),
                 sessionId = currentSessionId,
@@ -326,9 +338,11 @@ class ChatViewModel @Inject constructor(
                 messageType = MessageType.TOOL_CALL,
                 toolName = toolName,
                 toolArguments = Json.encodeToString(stringArguments),
-                toolStatus = status.name
+                toolStatus = status.name,
+                approved = autoApproved
             )
 
+            android.util.Log.d("ChatViewModel", "Adding tool call message: $toolName, status: $status, autoApproved: $autoApproved")
             chatRepository.addMessage(toolCallMessage)
         } catch (e: Exception) {
             _errorMessage.value = "Failed to add tool call message: ${e.message}"

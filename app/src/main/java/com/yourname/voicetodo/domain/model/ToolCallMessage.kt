@@ -8,7 +8,8 @@ data class ToolCallMessage(
     val result: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val approved: Boolean = false,
-    val denied: Boolean = false
+    val denied: Boolean = false,
+    val autoApproved: Boolean = false
 )
 
 enum class ToolCallStatus {

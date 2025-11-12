@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Database(
     entities = [TodoEntity::class, CategoryEntity::class, ChatSessionEntity::class, MessageEntity::class],
-    version = 4,  // Bump version for category support
+    version = 5,  // Bump version for approved field in messages
     exportSchema = false
 )
 @TypeConverters(TodoTypeConverters::class)
@@ -39,7 +39,7 @@ object TodoDatabaseModule {
             TodoDatabase::class.java,
             "todo_database"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .fallbackToDestructiveMigration()  // Alpha: Just recreate DB
         .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -160,5 +160,13 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
                 ('life', 'LIFE', 'Life', '#4caf50', 1, 1, $currentTime),
                 ('study', 'STUDY', 'Study', '#ff9800', 2, 1, $currentTime)
         """)
+    }
+}
+
+// Migration from version 4 to 5 - Add approved field to messages table
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add approved column to messages table
+        database.execSQL("ALTER TABLE messages ADD COLUMN approved INTEGER NOT NULL DEFAULT 0")
     }
 }

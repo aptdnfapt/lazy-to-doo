@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "categories")
 data class CategoryEntity(
-    @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
+    @PrimaryKey val id: String,    // Use provided ID, not auto-generated
     val name: String,              // "Work", "Life", "Study"
     val displayName: String,       // User-friendly name
     val color: String = "#137fec", // Hex color for UI

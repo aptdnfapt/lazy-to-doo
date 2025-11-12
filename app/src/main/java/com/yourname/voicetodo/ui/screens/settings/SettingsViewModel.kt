@@ -40,7 +40,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     val voiceEndpoint = preferences.getVoiceEndpoint()
-        .stateIn(viewModelScope, SharingStarted.Lazily, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp")
+        .stateIn(viewModelScope, SharingStarted.Lazily, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash")
 
     // General Settings
     val themeMode = preferences.getThemeMode()

@@ -52,6 +52,12 @@ class TodoListViewModel @Inject constructor(
     private val _showCategoryDialog = MutableStateFlow(false)
     val showCategoryDialog = _showCategoryDialog.asStateFlow()
 
+    private val _showEditCategoryDialog = MutableStateFlow(false)
+    val showEditCategoryDialog = _showEditCategoryDialog.asStateFlow()
+
+    private val _editingCategory = MutableStateFlow<Category?>(null)
+    val editingCategory = _editingCategory.asStateFlow()
+
     // Group todos by category and status
     val todosByCategory = repository.getAllTodos()
         .combine(categories) { todos, categories ->
@@ -85,8 +91,8 @@ class TodoListViewModel @Inject constructor(
                 categoryId
             } else {
                 categories.value.firstOrNull()?.id ?: run {
-                    // Create work category if no categories exist
-                    categoryRepository.createCategory("Work", "Work", "#137fec", null)
+                    // Create default categories if none exist
+                    categoryRepository.createDefaultCategoriesIfNeeded()
                     "work"
                 }
             }
@@ -179,14 +185,25 @@ class TodoListViewModel @Inject constructor(
     }
 
     fun editCategory(category: Category) {
-        // TODO: Implement category editing dialog
-        // For now, we'll show a basic implementation that logs the action
+        _editingCategory.value = category
+        _showEditCategoryDialog.value = true
+    }
+
+    fun hideEditCategoryDialog() {
+        _showEditCategoryDialog.value = false
+        _editingCategory.value = null
+    }
+
+    fun updateCategory(name: String, color: String) {
         viewModelScope.launch {
-            try {
-                categoryRepository.updateCategory(category)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            val category = _editingCategory.value ?: return@launch
+            val updatedCategory = category.copy(
+                name = name,
+                displayName = name,
+                color = color
+            )
+            categoryRepository.updateCategory(updatedCategory)
+            hideEditCategoryDialog()
         }
     }
 

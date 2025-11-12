@@ -24,14 +24,23 @@ class ToolPermissionManager @Inject constructor(
         return alwaysAllowedTools.contains(toolName)
     }
 
+    fun getCurrentAllowedTools(): Set<String> {
+        return alwaysAllowedTools.toSet()
+    }
+
     suspend fun setToolAlwaysAllowed(toolName: String, allowed: Boolean) {
         if (allowed) {
             alwaysAllowedTools.add(toolName)
         } else {
             alwaysAllowedTools.remove(toolName)
         }
-        // Save to DataStore
+        // Save to DataStore and ensure persistence
         userPreferences.setAllowedTools(alwaysAllowedTools.toList())
+        // Verify the save was successful by reloading
+        userPreferences.getAllowedTools().first().let { savedTools ->
+            alwaysAllowedTools.clear()
+            alwaysAllowedTools.addAll(savedTools)
+        }
     }
 
     suspend fun clearAllPermissions() {

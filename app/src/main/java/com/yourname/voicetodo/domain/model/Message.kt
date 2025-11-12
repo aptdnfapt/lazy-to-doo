@@ -12,7 +12,8 @@ data class Message(
     val toolName: String? = null,
     val toolArguments: String? = null,  // JSON string
     val toolStatus: String? = null,      // ToolCallStatus as string
-    val toolResult: String? = null
+    val toolResult: String? = null,
+    val approved: Boolean = false
 )
 
 enum class MessageType {

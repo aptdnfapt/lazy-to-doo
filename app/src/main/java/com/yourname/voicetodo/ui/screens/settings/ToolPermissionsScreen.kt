@@ -89,15 +89,24 @@ fun ToolPermissionsScreen(
 @Composable
 private fun getToolIcon(toolName: String): ImageVector {
     return when (toolName) {
+        // Todo management icons
         "addTodo" -> Icons.Default.Add
-        "editTitle", "editDescription" -> Icons.Default.Edit
         "removeTodo" -> Icons.Default.Delete
+        "editTitle" -> Icons.Default.Edit
+        "addSubtask" -> Icons.AutoMirrored.Filled.PlaylistAdd
+        "updateTodoContent" -> Icons.Default.EditNote
+        "moveTodoToCategory" -> Icons.AutoMirrored.Filled.DriveFileMove
         "markComplete" -> Icons.Default.CheckCircle
         "markInProgress" -> Icons.Default.PlayArrow
         "markDoLater" -> Icons.Default.Schedule
         "setReminder" -> Icons.Default.Notifications
         "listTodos" -> Icons.AutoMirrored.Filled.List
+        "findRelatedTodos" -> Icons.Default.Search
         "readOutLoud" -> Icons.AutoMirrored.Filled.VolumeUp
+        // Category management icons
+        "createCategory" -> Icons.Default.CreateNewFolder
+        "listCategories" -> Icons.Default.Folder
+        "deleteCategory" -> Icons.Default.FolderDelete
         else -> Icons.Default.Build
     }
 }

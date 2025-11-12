@@ -27,6 +27,7 @@ import com.yourname.voicetodo.domain.model.TodoStatus
 import com.yourname.voicetodo.ui.navigation.Screen
 import com.yourname.voicetodo.ui.screens.todos.components.AddTodoDialog
 import com.yourname.voicetodo.ui.screens.todos.components.CategoryAccordion
+import com.yourname.voicetodo.ui.screens.todos.components.EditCategoryDialog
 import com.yourname.voicetodo.ui.screens.todos.components.ExpandableFab
 import com.yourname.voicetodo.ui.screens.todos.components.NewCategoryDialog
 
@@ -44,6 +45,8 @@ fun TodoListScreen(
     val showDialog by viewModel.showDialog.collectAsState()
     val editingTodo by viewModel.editingTodo.collectAsState()
     val showCategoryDialog by viewModel.showCategoryDialog.collectAsState()
+    val showEditCategoryDialog by viewModel.showEditCategoryDialog.collectAsState()
+    val editingCategory by viewModel.editingCategory.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -130,6 +133,17 @@ fun TodoListScreen(
                 onDismiss = { viewModel.hideCategoryDialog() },
                 onConfirm = { name, color ->
                     viewModel.createCategory(name, color)
+                }
+            )
+        }
+
+        // Edit Category Dialog
+        if (showEditCategoryDialog && editingCategory != null) {
+            EditCategoryDialog(
+                category = editingCategory!!,
+                onDismiss = { viewModel.hideEditCategoryDialog() },
+                onConfirm = { name, color ->
+                    viewModel.updateCategory(name, color)
                 }
             )
         }

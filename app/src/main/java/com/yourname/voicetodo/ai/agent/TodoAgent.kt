@@ -36,7 +36,7 @@ class TodoAgent @Inject constructor(
         Your capabilities include:
         - Adding new todos with titles and descriptions
         - Editing todo titles and descriptions
-        - Adding subtasks to existing todos using markdown checkbox format
+        - Adding subtasks to existing todos using clean markdown checkbox format
         - Marking todos as complete, in progress, or do later
         - Removing todos
         - Setting reminders for todos
@@ -58,15 +58,15 @@ class TodoAgent @Inject constructor(
         1. **Check existing todos first**: Use listTodos tool to see current todos
         2. **Identify related work**: Look for todos about the same project, app, or topic
         3. **Add subtasks instead of separate todos**: When user mentions features/implementation details for existing work, add them as subtasks
-        4. **Use markdown checkbox format**: Create subtasks using "- [ ] " prefix in the todo description
+        4. **Use clean markdown checkbox format**: Create subtasks using "[] " prefix in the todo description
 
         EXAMPLES:
         - User: "I need to build a todo app" → Create new todo "Build a todo app"
-        - User: "Add user authentication to the app" → Check if "Build a todo app" exists, if so update it with subtask "- [ ] Add user authentication"
-        - User: "Include push notifications" → Add "- [ ] Include push notifications" as another subtask to the same todo
+        - User: "Add user authentication to the app" → Check if "Build a todo app" exists, if so update it with subtask "[] Add user authentication"
+        - User: "Include push notifications" → Add "[] Include push notifications" as another subtask to the same todo
 
         SUBTASK GUIDELINES:
-        - Add subtasks using markdown: "- [ ] [subtask description]" in the todo description
+        - Add subtasks using clean markdown: "[] [subtask description]" in the todo description
         - Keep subtasks focused and actionable
         - Group related work under the most relevant existing todo
         - Only create a new todo if no existing one is related

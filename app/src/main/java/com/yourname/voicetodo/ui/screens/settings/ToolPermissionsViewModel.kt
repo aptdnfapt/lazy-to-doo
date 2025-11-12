@@ -25,12 +25,19 @@ class ToolPermissionsViewModel @Inject constructor(
     private val _toolPermissions = MutableStateFlow<List<ToolPermissionItem>>(emptyList())
     val toolPermissions: StateFlow<List<ToolPermissionItem>> = _toolPermissions.asStateFlow()
 
-    // Define all 10 tools
+    // Define all available tools
     private val allTools = listOf(
+        // Todo management tools
         ToolPermissionItem(
             toolName = "addTodo",
             displayName = "Add Todo",
             description = "Create new todo items",
+            isAllowed = false
+        ),
+        ToolPermissionItem(
+            toolName = "removeTodo",
+            displayName = "Remove Todo",
+            description = "Delete todo items",
             isAllowed = false
         ),
         ToolPermissionItem(
@@ -40,15 +47,21 @@ class ToolPermissionsViewModel @Inject constructor(
             isAllowed = false
         ),
         ToolPermissionItem(
-            toolName = "editDescription",
-            displayName = "Edit Description",
-            description = "Update todo descriptions",
+            toolName = "addSubtask",
+            displayName = "Add Subtask",
+            description = "Add subtasks to existing todos",
             isAllowed = false
         ),
         ToolPermissionItem(
-            toolName = "removeTodo",
-            displayName = "Remove Todo",
-            description = "Delete todo items",
+            toolName = "updateTodoContent",
+            displayName = "Update Todo Content",
+            description = "Update todo descriptions and subtasks",
+            isAllowed = false
+        ),
+        ToolPermissionItem(
+            toolName = "moveTodoToCategory",
+            displayName = "Move Todo to Category",
+            description = "Move todos between categories",
             isAllowed = false
         ),
         ToolPermissionItem(
@@ -78,13 +91,38 @@ class ToolPermissionsViewModel @Inject constructor(
         ToolPermissionItem(
             toolName = "listTodos",
             displayName = "List Todos",
-            description = "View all todos",
+            description = "View all todos with filtering",
+            isAllowed = false
+        ),
+        ToolPermissionItem(
+            toolName = "findRelatedTodos",
+            displayName = "Find Related Todos",
+            description = "Search for todos by keywords",
             isAllowed = false
         ),
         ToolPermissionItem(
             toolName = "readOutLoud",
             displayName = "Read Out Loud",
             description = "Text-to-speech for todos",
+            isAllowed = false
+        ),
+        // Category management tools
+        ToolPermissionItem(
+            toolName = "createCategory",
+            displayName = "Create Category",
+            description = "Create new todo categories",
+            isAllowed = false
+        ),
+        ToolPermissionItem(
+            toolName = "listCategories",
+            displayName = "List Categories",
+            description = "View all categories",
+            isAllowed = false
+        ),
+        ToolPermissionItem(
+            toolName = "deleteCategory",
+            displayName = "Delete Category",
+            description = "Delete existing categories",
             isAllowed = false
         )
     )
@@ -106,7 +144,11 @@ class ToolPermissionsViewModel @Inject constructor(
         viewModelScope.launch {
             val currentPermission = permissionManager.isToolAlwaysAllowed(toolName)
             permissionManager.setToolAlwaysAllowed(toolName, !currentPermission)
-            loadPermissions()  // Reload to update UI
+            // Update UI immediately using the current state from manager
+            val updatedAllowedTools = permissionManager.getCurrentAllowedTools()
+            _toolPermissions.value = allTools.map { tool ->
+                tool.copy(isAllowed = updatedAllowedTools.contains(tool.toolName))
+            }
         }
     }
 }

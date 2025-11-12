@@ -24,9 +24,9 @@ import com.yourname.voicetodo.domain.model.ToolCallStatus
 @Composable
 fun ToolCallBubble(
     toolCall: ToolCallMessage,
-    onApproveAlways: () -> Unit,
-    onApproveOnce: () -> Unit,
-    onDeny: () -> Unit,
+    onApproveAlways: () -> Unit = {},
+    onApproveOnce: () -> Unit = {},
+    onDeny: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -138,8 +138,8 @@ fun ToolCallBubble(
                 }
             }
 
-            // Action buttons (only show if pending approval)
-            if (toolCall.status == ToolCallStatus.PENDING_APPROVAL) {
+            // Action buttons (only show if pending approval and not auto-approved)
+            if (toolCall.status == ToolCallStatus.PENDING_APPROVAL && !toolCall.autoApproved) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

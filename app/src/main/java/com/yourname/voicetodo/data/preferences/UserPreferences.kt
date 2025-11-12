@@ -81,7 +81,7 @@ class UserPreferences @Inject constructor(
     }
 
     fun getVoiceEndpoint(): Flow<String> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.VOICE_ENDPOINT] ?: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp"
+        preferences[PreferencesKeys.VOICE_ENDPOINT] ?: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash"
     }
 
     suspend fun setVoiceEndpoint(endpoint: String) {

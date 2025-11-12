@@ -32,6 +32,8 @@ class TodoTools @Inject constructor(
         if (permissionManager.isToolAlwaysAllowed(toolName)) {
             try {
                 val result = block()
+                // Small delay to ensure UI shows the executing state for auto-approved tools
+                kotlinx.coroutines.delay(500)
                 ToolExecutionEvents.notifyCompletion(toolName, arguments, true, result.toString())
                 return result
             } catch (e: Exception) {
@@ -170,7 +172,7 @@ class TodoTools @Inject constructor(
     }
 
     @Tool
-    @LLMDescription("Add a subtask to an existing todo using markdown checkbox format")
+    @LLMDescription("Add a subtask to an existing todo using clean markdown checkbox format")
     suspend fun addSubtask(
         @LLMDescription("Todo ID to add subtask to") todoId: String,
         @LLMDescription("Subtask description") subtask: String
@@ -188,9 +190,9 @@ class TodoTools @Inject constructor(
                         if (todo != null) {
                             val currentDescription = todo.description ?: ""
                             val newDescription = if (currentDescription.isBlank()) {
-                                "- [ ] $subtask"
+                                "[] $subtask"
                             } else {
-                                "$currentDescription\n- [ ] $subtask"
+                                "$currentDescription\n[] $subtask"
                             }
                             val updatedTodo = todo.copy(description = newDescription)
                             repository.updateTodo(updatedTodo)

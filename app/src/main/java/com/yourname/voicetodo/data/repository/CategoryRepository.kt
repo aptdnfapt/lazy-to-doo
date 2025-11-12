@@ -22,6 +22,7 @@ class CategoryRepository @Inject constructor(
 
     suspend fun createCategory(name: String, displayName: String, color: String, icon: String?): Category {
         val entity = CategoryEntity(
+            id = name.lowercase(), // Use name as ID for consistency
             name = name.uppercase(),
             displayName = displayName,
             color = color,
@@ -37,6 +38,44 @@ class CategoryRepository @Inject constructor(
 
     suspend fun deleteCategory(id: String) {
         categoryDao.deleteCategoryById(id)
+    }
+
+    // Create default categories with hardcoded IDs
+    suspend fun createDefaultCategoriesIfNeeded() {
+        try {
+            // Create default categories with hardcoded IDs
+            val defaultCategories = listOf(
+                CategoryEntity(
+                    id = "work",
+                    name = "WORK",
+                    displayName = "Work",
+                    color = "#137fec",
+                    sortOrder = 0,
+                    isDefault = true
+                ),
+                CategoryEntity(
+                    id = "life",
+                    name = "LIFE",
+                    displayName = "Life",
+                    color = "#4caf50",
+                    sortOrder = 1,
+                    isDefault = true
+                ),
+                CategoryEntity(
+                    id = "study",
+                    name = "STUDY",
+                    displayName = "Study",
+                    color = "#ff9800",
+                    sortOrder = 2,
+                    isDefault = true
+                )
+            )
+            defaultCategories.forEach { category ->
+                categoryDao.insertCategory(category)
+            }
+        } catch (e: Exception) {
+            // Categories already exist, ignore
+        }
     }
 }
 

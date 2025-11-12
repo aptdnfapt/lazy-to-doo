@@ -100,7 +100,8 @@ class ChatRepository @Inject constructor(
                     toolName = entity.toolName,
                     toolArguments = entity.toolArguments,
                     toolStatus = entity.toolStatus,
-                    toolResult = entity.toolResult
+                    toolResult = entity.toolResult,
+                    approved = entity.approved
                 )
             }
         }
@@ -136,7 +137,8 @@ class ChatRepository @Inject constructor(
             toolName = message.toolName,
             toolArguments = message.toolArguments,
             toolStatus = message.toolStatus,
-            toolResult = message.toolResult
+            toolResult = message.toolResult,
+            approved = message.approved
         )
         messageDao.insertMessage(entity)
         chatSessionDao.updateChatSessionTimestamp(message.sessionId, System.currentTimeMillis())

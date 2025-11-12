@@ -244,13 +244,13 @@ private fun StatusIndicator(message: String) {
 private fun com.yourname.voicetodo.domain.model.Message.toToolCallMessage(): com.yourname.voicetodo.domain.model.ToolCallMessage {
     // Parse JSON to Map<String, String> for display purposes
     val arguments = try {
-        this.toolArguments?.let { 
-            Json.decodeFromString<Map<String, String>>(it) 
+        this.toolArguments?.let {
+            Json.decodeFromString<Map<String, String>>(it)
         } ?: emptyMap()
     } catch (e: Exception) {
         emptyMap()
     }
-    
+
     val status = try {
         this.toolStatus?.let { ToolCallStatus.valueOf(it) } ?: ToolCallStatus.PENDING_APPROVAL
     } catch (e: Exception) {
@@ -263,7 +263,8 @@ private fun com.yourname.voicetodo.domain.model.Message.toToolCallMessage(): com
         arguments = arguments,
         status = status,
         result = this.toolResult,
-        timestamp = this.timestamp
+        timestamp = this.timestamp,
+        autoApproved = this.approved // Mark as auto-approved if it was previously approved
     )
 }
 

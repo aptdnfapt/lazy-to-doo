@@ -41,6 +41,8 @@ class ChatListViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    
+    val allSessions: Flow<List<ChatSession>> = chatSessions
 
     fun createNewChatSession(navController: NavHostController) {
         viewModelScope.launch {
