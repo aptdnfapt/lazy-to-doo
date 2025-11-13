@@ -93,3 +93,7 @@ app/src/main/assets/datastore/
 # Reference repos (for future lookups, not part of the build)
 koog-repo/
 whisper-gemini-to-input/
+
+# Test directories (local testing, not part of the build)
+tests/
+test-scripts/
