@@ -126,6 +126,9 @@ class ChatViewModel @Inject constructor(
 
         // Load categories
         viewModelScope.launch {
+            // Ensure default categories exist
+            categoryRepository.createDefaultCategoriesIfNeeded()
+            // Load categories
             categoryRepository.getAllCategories().collect { _categories.value = it }
         }
         
@@ -344,6 +347,9 @@ class ChatViewModel @Inject constructor(
 
             android.util.Log.d("ChatViewModel", "Adding tool call message: $toolName, status: $status, autoApproved: $autoApproved")
             chatRepository.addMessage(toolCallMessage)
+            // Force refresh the messages list to ensure UI updates immediately
+            val updatedMessages = chatRepository.getMessagesForSession(currentSessionId).first()
+            _messages.value = updatedMessages
         } catch (e: Exception) {
             _errorMessage.value = "Failed to add tool call message: ${e.message}"
         }
@@ -532,6 +538,10 @@ class ChatViewModel @Inject constructor(
 
     fun setSelectedCategory(categoryId: String?) {
         _selectedCategoryId.value = categoryId
+        // Save to preferences so TodoTools can access it
+        viewModelScope.launch {
+            userPreferences.setCurrentCategoryId(categoryId)
+        }
     }
 
     fun onToolCallDeny(messageId: String) {

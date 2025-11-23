@@ -97,3 +97,6 @@ whisper-gemini-to-input/
 # Test directories (local testing, not part of the build)
 tests/
 test-scripts/
+
+# OpenCode repository (for reference, not part of the build)
+opencode/

@@ -151,4 +151,29 @@ class ToolPermissionsViewModel @Inject constructor(
             }
         }
     }
+
+    fun areAllToolsAllowed(): Boolean {
+        val allowedTools = permissionManager.getCurrentAllowedTools()
+        val allToolNames = allTools.map { it.toolName }
+        return allToolNames.all { allowedTools.contains(it) }
+    }
+
+    fun toggleAllowAllTools(allowAll: Boolean) {
+        viewModelScope.launch {
+            if (allowAll) {
+                // Allow all tools
+                allTools.forEach { tool ->
+                    permissionManager.setToolAlwaysAllowed(tool.toolName, true)
+                }
+            } else {
+                // Clear all tool permissions
+                permissionManager.clearAllPermissions()
+            }
+            // Update UI immediately
+            val updatedAllowedTools = permissionManager.getCurrentAllowedTools()
+            _toolPermissions.value = allTools.map { tool ->
+                tool.copy(isAllowed = updatedAllowedTools.contains(tool.toolName))
+            }
+        }
+    }
 }

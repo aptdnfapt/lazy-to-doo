@@ -43,6 +43,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -67,7 +68,13 @@ fun TodoDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(todo?.title ?: "Task Details") },
+                title = { 
+                    Text(
+                        todo?.title ?: "Task Details",
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)

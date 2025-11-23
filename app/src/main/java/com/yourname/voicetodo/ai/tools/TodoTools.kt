@@ -30,6 +30,17 @@ class TodoTools @Inject constructor(
     ): T {
         // Check if always allowed
         if (permissionManager.isToolAlwaysAllowed(toolName)) {
+            // For auto-approved tools, we still go through the permission request flow
+            // but automatically approve it, so the ChatViewModel can create the tool call message
+            val granted = ToolExecutionEvents.requestPermission(toolName, arguments)
+            // The ChatViewModel will automatically approve this request and create the tool call message
+            
+            if (!granted) {
+                // This shouldn't happen for auto-approved tools, but handle it just in case
+                ToolExecutionEvents.notifyCompletion(toolName, arguments, false, null, "Permission denied")
+                throw SecurityException("Permission denied for auto-approved tool: $toolName")
+            }
+            
             try {
                 val result = block()
                 // Small delay to ensure UI shows the executing state for auto-approved tools
@@ -42,7 +53,7 @@ class TodoTools @Inject constructor(
             }
         }
 
-        // Request permission
+        // Request permission for non-auto-approved tools
         val granted = ToolExecutionEvents.requestPermission(toolName, arguments)
         if (!granted) {
             ToolExecutionEvents.notifyCompletion(toolName, arguments, false, null, "Permission denied")
@@ -90,10 +101,16 @@ class TodoTools @Inject constructor(
                         )
 
                         """
-                        Tool: addTodo
-                        Status: SUCCESS
-                        Result: Added todo "${todo.title}" to ${categoryId}
-                        Todo ID: ${todo.id}
+                        ✅ **Todo Added Successfully!**
+                        
+                        📝 **Title:** ${todo.title}
+                        🏷️ **Category:** ${categoryId}
+                        📊 **Status:** ${todo.status.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }}
+                        🔑 **Todo ID:** ${todo.id}
+                        
+                        ${if (description != null) "📝 **Description:** $description\n" else ""}
+                        
+                        💡 *You can refer to this todo by its ID "${todo.id}" for future updates or ask me to show all todos in the ${categoryId} category.*
                         """.trimIndent()
                     } catch (e: Exception) {
                         """
@@ -289,9 +306,25 @@ class TodoTools @Inject constructor(
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
                             repository.updateTodoStatus(todoId, TodoStatus.DONE)
-                            "🔧 Tool Call: markComplete\n✅ Marked todo as complete: ${todo.title}"
+                            """
+                            ✅ **Todo Completed Successfully!**
+                            
+                            📝 **Completed:** ${todo.title}
+                            🏷️ **Category:** ${todo.categoryId}
+                            🕐 **Completed At:** ${java.text.SimpleDateFormat("MMM dd, yyyy 'at' HH:mm").format(java.util.Date())}
+                            
+                            🎉 Great job! You've completed "${todo.title}". This todo has been moved to the Done section.
+                            
+                            💡 *You can ask me to show your completed todos or add new tasks to keep the momentum going!*
+                            """.trimIndent()
                         } else {
-                            "🔧 Tool Call: markComplete\n❌ Todo with ID $todoId not found"
+                            """
+                            ❌ **Todo Not Found**
+                            
+                            🔑 **Todo ID:** $todoId
+                            
+                            I couldn't find a todo with that ID. Please check the ID and try again, or ask me to list your todos to see available options.
+                            """.trimIndent()
                         }
                     } catch (e: Exception) {
                         "🔧 Tool Call: markComplete\n❌ Failed: ${e.message}"
@@ -319,9 +352,25 @@ class TodoTools @Inject constructor(
                         val todo = repository.getTodoById(todoId)
                         if (todo != null) {
                             repository.updateTodoStatus(todoId, TodoStatus.IN_PROGRESS)
-                            "🔧 Tool Call: markInProgress\n🔄 Marked todo as in progress: ${todo.title}"
+                            """
+                            🔄 **Todo Status Updated!**
+                            
+                            📝 **Task:** ${todo.title}
+                            🏷️ **Category:** ${todo.categoryId}
+                            📊 **New Status:** In Progress
+                            
+                            💪 You're making progress on "${todo.title}"! It's now marked as In Progress.
+                            
+                            💡 *You can ask me to add subtasks, update the description, or mark it as complete when you're done!*
+                            """.trimIndent()
                         } else {
-                            "🔧 Tool Call: markInProgress\n❌ Todo with ID $todoId not found"
+                            """
+                            ❌ **Todo Not Found**
+                            
+                            🔑 **Todo ID:** $todoId
+                            
+                            I couldn't find a todo with that ID. Please check the ID and try again, or ask me to list your todos to see available options.
+                            """.trimIndent()
                         }
                     } catch (e: Exception) {
                         "🔧 Tool Call: markInProgress\n❌ Failed: ${e.message}"
@@ -446,18 +495,51 @@ class TodoTools @Inject constructor(
                             return@ToolExecutionRequest "📝 No todos found related to: $keywords"
                         }
 
-                        val todoList = relatedTodos.joinToString("\n") { todo ->
+                        val todoList = relatedTodos.joinToString("\n\n") { todo ->
                             val statusIcon = when (todo.status) {
                                 TodoStatus.TODO -> "📝"
                                 TodoStatus.IN_PROGRESS -> "🔄"
                                 TodoStatus.DONE -> "✅"
                                 TodoStatus.DO_LATER -> "⏰"
                             }
-                            val desc = todo.description?.let { "\n   Description: \"${it.take(50)}...\"" } ?: ""
-                            "$statusIcon ${todo.title} [${todo.id}] (Category: ${todo.categoryId})$desc"
+                            
+                            val statusText = when (todo.status) {
+                                TodoStatus.TODO -> "To Do"
+                                TodoStatus.IN_PROGRESS -> "In Progress"
+                                TodoStatus.DONE -> "Done"
+                                TodoStatus.DO_LATER -> "Do Later"
+                            }
+                            
+                            val lines = mutableListOf<String>()
+                            lines.add("$statusIcon **${todo.title}** [${todo.id}]")
+                            lines.add("   Status: $statusText")
+                            lines.add("   Category: ${todo.categoryId}")
+                            
+                            // Add description if available
+                            if (!todo.description.isNullOrBlank()) {
+                                val cleanDescription = todo.description.replace("\n", " ").trim()
+                                lines.add("   Description: \"$cleanDescription\"")
+                            }
+                            
+                            // Add subtasks if any
+                            if (todo.subtasks.isNotEmpty()) {
+                                lines.add("   Subtasks (${todo.subtasks.count { it.completed }}/ ${todo.subtasks.size}):")
+                                todo.subtasks.forEach { subtask ->
+                                    val checkmark = if (subtask.completed) "✅" else "☐"
+                                    lines.add("     $checkmark ${subtask.text}")
+                                }
+                            }
+                            
+                            lines.joinToString("\n")
                         }
 
-                        "📋 Related todos for '$keywords':\n$todoList"
+                        """
+                        🔍 **Related Todos for "$keywords"**: ${relatedTodos.size}
+                        
+                        $todoList
+                        
+                        💡 *Found ${relatedTodos.size} todos matching your search. Ask me to update any of these todos or filter by status.*
+                        """.trimIndent()
                     } catch (e: Exception) {
                         "❌ Failed to search todos: ${e.message}"
                     }
@@ -471,7 +553,7 @@ class TodoTools @Inject constructor(
     @LLMDescription("List todos with optional filtering")
     suspend fun listTodos(
         @LLMDescription("Category ID to filter by, or 'all'") categoryId: String = "all",
-        @LLMDescription("Status to filter by: todo, in_progress, done, do_later, or 'all'") status: String = "all"
+        @LLMDescription("Status to filter by: todo, in_progress, done, do_later, active, or 'all'") status: String = "all"
     ): String = executeWithPermission(
         toolName = "listTodos",
         arguments = mapOf("categoryId" to categoryId, "status" to status)
@@ -486,12 +568,24 @@ class TodoTools @Inject constructor(
                             categoryId == "all" && status == "all" -> {
                                 runBlocking { repository.getAllTodos().first() }
                             }
+                            categoryId == "all" && status == "active" -> {
+                                // Active status: TODO + IN_PROGRESS (excluding DONE)
+                                val todoStatuses = listOf(TodoStatus.TODO, TodoStatus.IN_PROGRESS)
+                                val allTodos = runBlocking { repository.getAllTodos().first() }
+                                allTodos.filter { todo -> todo.status in todoStatuses }
+                            }
                             categoryId == "all" -> {
                                 val todoStatus = TodoStatus.valueOf(status.uppercase().replace(" ", "_"))
                                 runBlocking { repository.getTodosByStatus(todoStatus).first() }
                             }
                             status == "all" -> {
                                 runBlocking { repository.getTodosByCategory(categoryId).first() }
+                            }
+                            status == "active" -> {
+                                // Active todos in specific category: TODO + IN_PROGRESS
+                                val todoStatuses = listOf(TodoStatus.TODO, TodoStatus.IN_PROGRESS)
+                                val categoryTodos = runBlocking { repository.getTodosByCategory(categoryId).first() }
+                                categoryTodos.filter { todo -> todo.status in todoStatuses }
                             }
                             else -> {
                                 val todoStatus = TodoStatus.valueOf(status.uppercase().replace(" ", "_"))
@@ -503,18 +597,57 @@ class TodoTools @Inject constructor(
                             return@ToolExecutionRequest "📝 No todos found"
                         }
 
-                        val todoList = todos.joinToString("\n") { todo ->
+                        val todoList = todos.joinToString("\n\n") { todo ->
                             val statusIcon = when (todo.status) {
                                 TodoStatus.TODO -> "📝"
                                 TodoStatus.IN_PROGRESS -> "🔄"
                                 TodoStatus.DONE -> "✅"
                                 TodoStatus.DO_LATER -> "⏰"
                             }
-                            val desc = todo.description?.let { "\n   Description: \"${it.take(50)}...\"" } ?: ""
-                            "$statusIcon ${todo.title} [${todo.id}] (Category: ${todo.categoryId})$desc"
+                            
+                            val statusText = when (todo.status) {
+                                TodoStatus.TODO -> "To Do"
+                                TodoStatus.IN_PROGRESS -> "In Progress"
+                                TodoStatus.DONE -> "Done"
+                                TodoStatus.DO_LATER -> "Do Later"
+                            }
+                            
+                            val lines = mutableListOf<String>()
+                            lines.add("$statusIcon **${todo.title}** [${todo.id}]")
+                            lines.add("   Status: $statusText")
+                            lines.add("   Category: ${todo.categoryId}")
+                            
+                            // Add description if available
+                            if (!todo.description.isNullOrBlank()) {
+                                val cleanDescription = todo.description.replace("\n", " ").trim()
+                                lines.add("   Description: \"$cleanDescription\"")
+                            }
+                            
+                            // Add subtasks if any
+                            if (todo.subtasks.isNotEmpty()) {
+                                lines.add("   Subtasks (${todo.subtasks.count { it.completed }}/ ${todo.subtasks.size}):")
+                                todo.subtasks.forEach { subtask ->
+                                    val checkmark = if (subtask.completed) "✅" else "☐"
+                                    lines.add("     $checkmark ${subtask.text}")
+                                }
+                            }
+                            
+                            // Add reminder if set
+                            if (todo.reminderTime != null) {
+                                val reminderDate = java.util.Date(todo.reminderTime)
+                                lines.add("   Reminder: ${java.text.SimpleDateFormat("MMM dd, yyyy 'at' HH:mm").format(reminderDate)}")
+                            }
+                            
+                            lines.joinToString("\n")
                         }
 
-                        "📋 Todos:\n$todoList"
+                        """
+                        📋 **Todos Found**: ${todos.size}
+                        
+                        $todoList
+                        
+                        💡 *Use specific todo IDs for updates, or ask me to filter by status/category*
+                        """.trimIndent()
                     } catch (e: Exception) {
                         "❌ Failed to list todos: ${e.message}"
                     }

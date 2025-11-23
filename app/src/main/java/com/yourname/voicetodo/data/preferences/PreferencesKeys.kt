@@ -20,6 +20,7 @@ object PreferencesKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
     val TTS_ENABLED = booleanPreferencesKey("tts_enabled")
     val AUTO_EXECUTE = booleanPreferencesKey("auto_execute")
+    val CURRENT_CATEGORY_ID = stringPreferencesKey("current_category_id")
 
     // Tool Permissions
     val ALLOWED_TOOLS = stringPreferencesKey("allowed_tools")

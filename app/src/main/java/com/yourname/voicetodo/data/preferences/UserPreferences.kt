@@ -128,6 +128,21 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    // Current Category Selection (for chat interface)
+    fun getCurrentCategoryId(): Flow<String?> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.CURRENT_CATEGORY_ID]
+    }
+
+    suspend fun setCurrentCategoryId(categoryId: String?) {
+        dataStore.edit { preferences ->
+            if (categoryId != null) {
+                preferences[PreferencesKeys.CURRENT_CATEGORY_ID] = categoryId
+            } else {
+                preferences -= PreferencesKeys.CURRENT_CATEGORY_ID
+            }
+        }
+    }
+
     // Tool Permissions
     fun getAllowedTools(): Flow<List<String>> = dataStore.data.map { preferences ->
         val json = preferences[PreferencesKeys.ALLOWED_TOOLS] ?: "[]"

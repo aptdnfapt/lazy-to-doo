@@ -18,6 +18,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -201,8 +203,10 @@ fun SettingsScreen(
 
                 Column {
                     OutlinedTextField(
-                        value = if (llmApiKey.isNotBlank()) "••••••••••••••••" else "",
-                        onValueChange = { },
+                        value = if (showLlmApiKey && llmApiKey.isNotBlank()) llmApiKey else if (llmApiKey.isNotBlank()) "••••••••••••••••" else "",
+                        onValueChange = { newValue ->
+                            tempLlmApiKey = newValue
+                        },
                         label = {
                             Text(
                                 when (llmProvider) {
@@ -212,31 +216,43 @@ fun SettingsScreen(
                                 }
                             )
                         },
-                        placeholder = { Text("No API key set") },
+                        placeholder = { Text("Enter your API key") },
                         modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = VisualTransformation.None,
+                        visualTransformation = if (showLlmApiKey) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            Row {
-                                OutlinedButton(
-                                    onClick = { showLlmApiKey = !showLlmApiKey },
-                                    modifier = Modifier.size(width = 60.dp, height = 32.dp),
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(if (showLlmApiKey) "Hide" else "Show", style = MaterialTheme.typography.bodySmall)
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                OutlinedButton(
-                                    onClick = { showLlmApiKeyDialog = true },
-                                    modifier = Modifier.size(width = 50.dp, height = 32.dp),
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text("Set", style = MaterialTheme.typography.bodySmall)
-                                }
+                            IconButton(
+                                onClick = { showLlmApiKey = !showLlmApiKey },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    if (showLlmApiKey) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (showLlmApiKey) "Hide API key" else "Show API key",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         },
-                        readOnly = true,
+                        singleLine = true,
                         shape = RoundedCornerShape(8.dp)
                     )
+                    
+                    // Save button for API key
+                    if (tempLlmApiKey != llmApiKey) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.updateLlmApiKey(tempLlmApiKey)
+                                    showLlmApiKeyDialog = false
+                                },
+                                enabled = tempLlmApiKey.isNotBlank(),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("Save")
+                            }
+                        }
+                    }
                 }
 
                 Column {
@@ -299,22 +315,27 @@ fun SettingsScreen(
                     )
 
                     OutlinedTextField(
-                        value = if (geminiApiKey.isNotBlank()) "••••••••••••••••" else "",
-                        onValueChange = viewModel::updateGeminiApiKey,
+                        value = if (showGeminiApiKey && geminiApiKey.isNotBlank()) geminiApiKey else if (geminiApiKey.isNotBlank()) "••••••••••••••••" else "",
+                        onValueChange = { newValue ->
+                            viewModel.updateGeminiApiKey(newValue)
+                        },
                         label = { Text("Gemini API Key") },
-                        placeholder = { Text("No API key set") },
+                        placeholder = { Text("Enter your API key") },
                         modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = VisualTransformation.None,
+                        visualTransformation = if (showGeminiApiKey) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            OutlinedButton(
+                            IconButton(
                                 onClick = { showGeminiApiKey = !showGeminiApiKey },
-                                modifier = Modifier.size(width = 60.dp, height = 32.dp),
-                                shape = RoundedCornerShape(4.dp)
+                                modifier = Modifier.size(40.dp)
                             ) {
-                                Text(if (showGeminiApiKey) "Hide" else "Show", style = MaterialTheme.typography.bodySmall)
+                                Icon(
+                                    if (showGeminiApiKey) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (showGeminiApiKey) "Hide API key" else "Show API key",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         },
-                        readOnly = true,
+                        singleLine = true,
                         shape = RoundedCornerShape(8.dp)
                     )
 
@@ -413,36 +434,6 @@ fun SettingsScreen(
                         Switch(
                             checked = ttsEnabled,
                             onCheckedChange = viewModel::updateTtsEnabled,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                    }
-
-                    // Auto-execute tools
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Auto-execute Tools",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Automatically execute actions without confirmation",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = autoExecute,
-                            onCheckedChange = viewModel::updateAutoExecute,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary,

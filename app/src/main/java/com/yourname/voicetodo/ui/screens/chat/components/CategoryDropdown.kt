@@ -29,11 +29,19 @@ fun CategoryDropdown(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = it },
+        onExpandedChange = { newExpanded ->
+            // Only update if the state actually changes to prevent flickering
+            if (newExpanded != expanded) {
+                expanded = newExpanded
+            }
+        },
         modifier = modifier
     ) {
         OutlinedButton(
-            onClick = { expanded = true },
+            onClick = {
+                // Toggle expansion state
+                expanded = !expanded
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()
@@ -50,7 +58,9 @@ fun CategoryDropdown(
 
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = {
+                expanded = false
+            }
         ) {
             DropdownMenuItem(
                 text = { Text("All Sections") },
